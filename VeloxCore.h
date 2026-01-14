@@ -64,7 +64,7 @@ private:
     static inline uint32_t EncodeZigZag(int32_t n) { return (n << 1) ^ (n >> 31); }
     static inline int32_t DecodeZigZag(uint32_t n) { return (n >> 1) ^ -(n & 1); }
 
-    // --- TẦNG 1: LPC (Windowed) ---
+    // --- LPC (Windowed) ---
     static void ComputeLPC(const std::vector<int32_t>& data, int order, std::vector<int>& q_coeffs, int& q_shift) {
         if (data.size() < order) return;
         std::vector<double> windowed(data.size());
@@ -98,41 +98,20 @@ private:
             q_coeffs.push_back((int)std::floor(a[i][order] * (1 << q_shift) + 0.5));
     }
 
-    // --- TẦNG 3: ZRL (Zero Run Length) WRITER ---
+    // --- ZRL (Zero Run Length) WRITER ---
     static void WriteZRL(BitStream& bs, uint32_t val, int k, int& zero_run) {
         if (val == 0) {
             zero_run++;
             return;
         }
 
-        // Nếu có chuỗi 0 đang chờ, xả nó ra trước
         if (zero_run > 0) {
-            // Encode chuỗi 0
-            // Logic: Ghi val=0 với Run-Length. 
-            // Ta quy ước: Nếu val=0, ghi 1 bit '0'. Sau đó ghi Rice(count).
-            // Nếu val!=0, ghi 1 bit '1'. Sau đó ghi Rice(val-1).
-            // Tuy nhiên để đơn giản và hiệu quả cho Adaptive Rice hiện tại:
             
-            // Cách làm của Velox v5:
-            // Khi gặp 0: Không ghi gì cả, chỉ tăng biến đếm.
-            // Khi gặp !=0: Ghi mã đặc biệt báo hiệu "Hết chuỗi 0" và số lượng, sau đó ghi giá trị.
-            
-            // Nhưng Context Model cần update từng mẫu. ZRL làm phức tạp việc đó.
-            // Giải pháp: Hybrid. Chỉ ZRL khi zero_run > thềm nào đó.
-            
-            // ĐỂ ĐƠN GIẢN VÀ BIT-PERFECT:
-            // Ta sẽ không dùng ZRL phức tạp mà dùng cơ chế Rice thông thường,
-            // nhưng vì AI đoán rất chuẩn nên val=0 sẽ rất nhiều -> Rice K=0 sẽ nén 0 thành 1 bit.
-            // ZRL chỉ hiệu quả nếu K=0 tốn 1 bit vẫn là nhiều.
             
             // IMPLEMENT ZRL TRỰC TIẾP:
             while (zero_run > 0) {
-                // Ghi số 0. Với K=0, số 0 là bit '0'.
-                // Ta có thể ghi hàng loạt.
-                bs.WriteBit(0); // 0 (Unary part of 0)
-                bs.WriteBit(0); // Stop bit -> Value 0
-                // Thực ra Rice(0) với k=0 là bit '0'.
-                // (q=0 -> loop 0 lần -> stop bit '0' -> rem 0 bit) -> Tổng 1 bit '0'.
+                bs.WriteBit(0); 
+                bs.WriteBit(0); 
                 zero_run--;
             }
         }
@@ -281,7 +260,7 @@ public:
 
         // --- GLOBAL HEADER ANALYSIS ---
         // Tính toán đặc tính chung của bài nhạc để thiết lập AI ngay từ đầu
-        // Giúp AI không phải "học lại từ đầu" ở mỗi block, tránh lãng phí bit warm-up.
+        // Giúp AI không phải học lại từ đầu ở mỗi block, tránh lãng phí bit warm-up.
         uint32_t global_ctx = AnalyzeGlobalContext(pcm);
         bs.Write(global_ctx, 16); // Lưu vào Header (16 bit)
 

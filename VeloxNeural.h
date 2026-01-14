@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <cstring>
 
-// Dual-LMS: Kết hợp 2 bộ lọc với tốc độ học khác nhau
 class DeepNeuralPredictor {
 private:
     static const int LONG_ORDER = 64; // Bộ nhớ dài (Deep Bass)
@@ -99,7 +98,6 @@ public:
     }
 
     inline void Update(uint32_t magnitude) {
-        // Fast adaptation: 3/4 cũ + 1/4 mới
         mean_energy = mean_energy - (mean_energy >> 2) + (magnitude >> 2);
         if (mean_energy < 1) mean_energy = 1;
     }
