@@ -5,3 +5,5 @@ player.cpp
 *.vlx
 .vscode
 .vscode/
+original_sound
+original_sound/

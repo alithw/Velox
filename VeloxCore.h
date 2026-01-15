@@ -1,409 +1,208 @@
 #ifndef VELOX_CORE_H
 #define VELOX_CORE_H
 
-#include "VeloxNeural.h"
-#include <vector>
-#include <cmath>
-#include <algorithm>
-#include <cstring>
+#include "VeloxFormat.h"
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-// --- BITSTREAM ---
-class BitStream
-{
+// --- BITSTREAM (Optimized) ---
+class BitStream {
     std::vector<uint8_t> buffer;
-    uint64_t bit_acc = 0;
-    int bit_count = 0;
-    size_t read_pos = 0;
-
+    uint64_t bit_acc = 0; int bit_cnt = 0; size_t r_pos = 0;
 public:
-    BitStream() { buffer.reserve(8 * 1024 * 1024); }
-    BitStream(const uint8_t *data, size_t size) : buffer(data, data + size) {}
-
-    inline void WriteBit(int bit)
-    {
-        if (bit)
-            bit_acc |= (1ULL << bit_count);
-        bit_count++;
-        if (bit_count == 8)
-        {
-            buffer.push_back(bit_acc & 0xFF);
-            bit_acc = 0;
-            bit_count = 0;
+    BitStream() { buffer.reserve(8*1024*1024); }
+    BitStream(const uint8_t* d, size_t s) : buffer(d, d+s) {}
+    
+    inline void Write(uint32_t v, int n) {
+        for(int i=0;i<n;i++) {
+            if((v>>i)&1) bit_acc |= (1ULL<<bit_cnt);
+            bit_cnt++;
+            if(bit_cnt==8) { buffer.push_back((uint8_t)bit_acc); bit_acc=0; bit_cnt=0; }
         }
     }
-
-    inline void Write(uint32_t value, int num_bits)
-    {
-        for (int i = 0; i < num_bits; i++)
-            WriteBit((value >> i) & 1);
-    }
-
-    inline void Flush()
-    {
-        if (bit_count > 0)
-            buffer.push_back(bit_acc & 0xFF);
-    }
-    const std::vector<uint8_t> &GetData() const { return buffer; }
-
-    inline int ReadBit()
-    {
-        if (bit_count == 0)
-        {
-            if (read_pos >= buffer.size())
-                return 0;
-            bit_acc = buffer[read_pos++];
-            bit_count = 8;
+    inline void Flush() { if(bit_cnt>0) buffer.push_back((uint8_t)bit_acc); }
+    const std::vector<uint8_t>& GetData() const { return buffer; }
+    
+    inline uint32_t Read(int n) {
+        uint32_t v=0;
+        for(int i=0;i<n;i++) {
+            if(bit_cnt==0) { 
+                if(r_pos>=buffer.size()) return v; 
+                bit_acc=buffer[r_pos++]; bit_cnt=8; 
+            }
+            if(bit_acc&1) v|=(1<<i);
+            bit_acc>>=1; bit_cnt--;
         }
-        int val = bit_acc & 1;
-        bit_acc >>= 1;
-        bit_count--;
-        return val;
+        return v;
     }
-
-    inline uint32_t Read(int num_bits)
-    {
-        uint32_t val = 0;
-        for (int i = 0; i < num_bits; i++)
-            if (ReadBit())
-                val |= (1 << i);
-        return val;
-    }
-
-    inline int32_t ReadSigned(int num_bits)
-    {
-        uint32_t val = Read(num_bits);
-        if (val & (1 << (num_bits - 1)))
-            return (int32_t)(val - (1 << num_bits));
-        return (int32_t)val;
+    inline int32_t ReadS(int n) {
+        uint32_t v = Read(n);
+        if(v & (1<<(n-1))) return (int32_t)(v - (1<<n));
+        return (int32_t)v;
     }
 };
 
-class VeloxCodec
-{
-private:
-    static inline uint32_t EncodeZigZag(int32_t n) { return (n << 1) ^ (n >> 31); }
-    static inline int32_t DecodeZigZag(uint32_t n) { return (n >> 1) ^ -(n & 1); }
-
-    // --- LPC (Windowed) ---
-    static void ComputeLPC(const std::vector<int32_t> &data, int order, std::vector<int> &q_coeffs, int &q_shift)
-    {
-        if (data.size() < order)
-            return;
-        std::vector<double> windowed(data.size());
-        for (size_t i = 0; i < data.size(); i++)
-            windowed[i] = data[i] * (0.5 * (1.0 - std::cos(2.0 * M_PI * i / (data.size() - 1))));
-
-        double autocorr[17];
-        for (int i = 0; i <= order; ++i)
-        {
-            double sum = 0;
-            for (size_t j = i; j < data.size(); ++j)
-                sum += windowed[j] * windowed[j - i];
-            autocorr[i] = sum;
-        }
-
-        double a[17][17] = {0};
-        double e[17] = {0};
-        e[0] = autocorr[0];
-        if (e[0] < 1e-9)
-        {
-            q_shift = 0;
-            return;
-        }
-
-        for (int i = 1; i <= order; ++i)
-        {
-            double k = autocorr[i];
-            for (int j = 1; j < i; ++j)
-                k -= a[j][i - 1] * autocorr[i - j];
-            k /= e[i - 1];
-            if (k > 0.999)
-                k = 0.999;
-            if (k < -0.999)
-                k = -0.999;
-            a[i][i] = k;
-            for (int j = 1; j < i; ++j)
-                a[j][i] = a[j][i - 1] - k * a[i - j][i - 1];
-            e[i] = e[i - 1] * (1 - k * k);
-        }
-
-        q_shift = 10;
-        for (int i = 1; i <= order; ++i)
-            q_coeffs.push_back((int)std::floor(a[i][order] * (1 << q_shift) + 0.5));
+// --- NEURAL PREDICTOR (DUAL-GEAR) ---
+class NeuralPredictor {
+    static const int ORDER = 12; // Tăng order lên 12
+    int32_t weights[ORDER];
+    int32_t history[ORDER];
+public:
+    NeuralPredictor() { memset(weights,0,sizeof(weights)); memset(history,0,sizeof(history)); }
+    
+    inline int32_t Predict() {
+        int64_t sum = 0;
+        for(int i=0; i<ORDER; i++) sum += (int64_t)history[i] * weights[i];
+        return (int32_t)(sum >> 11); // Q11 Fixed point (2048 = 1.0)
     }
+    
+    inline void Update(int32_t actual, int32_t pred) {
+        int32_t err = actual - pred;
+        int sign = (err > 0) ? 1 : ((err < 0) ? -1 : 0);
+        if(sign == 0) return; // Perfect match
+        
+        // Adaptive Learning Rate:
+        // Nếu lỗi lớn (>256), học nhanh (delta = 8)
+        // Nếu lỗi nhỏ, học chậm (delta = 2)
+        int delta = (std::abs(err) > 256) ? 8 : 2;
 
-    // --- ZRL (Zero Run Length) WRITER ---
-    static void WriteZRL(BitStream &bs, uint32_t val, int k, int &zero_run)
-    {
-        if (val == 0)
-        {
-            zero_run++;
-            return;
-        }
-
-        if (zero_run > 0)
-        {
-
-            // IMPLEMENT ZRL TRỰC TIẾP:
-            while (zero_run > 0)
-            {
-                bs.WriteBit(0);
-                bs.WriteBit(0);
-                zero_run--;
+        for(int i=0; i<ORDER; i++) {
+            int h_sign = (history[i]>0)?1:((history[i]<0)?-1:0);
+            if(sign == h_sign) weights[i] += delta;
+            else if(h_sign != 0) weights[i] -= delta;
+            
+            // Leakage (Giảm nhẹ weight để tránh bão hòa)
+            if((i & 7) == 0) { // Mỗi 8 lần update thì giảm weight 1 chút
+                 if(weights[i] > 0) weights[i]--;
+                 if(weights[i] < 0) weights[i]++;
             }
         }
-
-        // Ghi giá trị khác 0
-        uint32_t q = val >> k;
-        uint32_t r = val & ((1 << k) - 1);
-
-        if (q < 32)
-        {
-            for (uint32_t x = 0; x < q; x++)
-                bs.WriteBit(1);
-            bs.WriteBit(0);
-            if (k > 0)
-                bs.Write(r, k);
-        }
-        else
-        {
-            for (uint32_t x = 0; x < 32; x++)
-                bs.WriteBit(1);
-            bs.WriteBit(0);
-            bs.Write(val, 32);
-        }
+        
+        for(int i=ORDER-1; i>0; i--) history[i] = history[i-1];
+        history[0] = actual;
     }
+};
 
-    // Hàm thực tế mã hóa (không dùng ZRL phức tạp để đảm bảo Context update đúng)
-    static void EncodeSample(BitStream &bs, uint32_t m, int k)
-    {
-        uint32_t q = m >> k;
-        uint32_t r = m & ((1 << k) - 1);
-        if (q < 32)
-        {
-            for (uint32_t x = 0; x < q; x++)
-                bs.WriteBit(1);
-            bs.WriteBit(0);
-            if (k > 0)
-                bs.Write(r, k);
-        }
-        else
-        {
-            for (uint32_t x = 0; x < 32; x++)
-                bs.WriteBit(1);
-            bs.WriteBit(0);
-            bs.Write(m, 32);
-        }
-    }
+class VeloxCodec {
+    static inline uint32_t ZigZag(int64_t n) { return (uint32_t)((n << 1) ^ (n >> 63)); }
+    static inline int64_t DeZigZag(uint32_t n) { return (int64_t)((n >> 1) ^ -(int64_t)(n & 1)); }
 
-    static uint32_t DecodeSample(BitStream &bs, int k)
-    {
-        uint32_t q = 0;
-        while (bs.ReadBit() == 1)
-            q++;
-        uint32_t m;
-        if (q < 32)
-        {
-            uint32_t r = (k > 0) ? bs.Read(k) : 0;
-            m = (q << k) | r;
-        }
-        else
-        {
-            m = bs.Read(32);
-        }
-        return m;
-    }
-
-    // --- PIPELINE XỬ LÝ BLOCK ---
-    static void EncodeBlock(const std::vector<int32_t> &data, BitStream &bs, uint32_t global_context)
-    {
-        size_t n = data.size();
-        if (n == 0)
-            return;
-
-        // Tầng 1: LPC
-        int order = 16;
-        std::vector<int> lpc_coeffs;
-        int lpc_shift = 0;
-        ComputeLPC(data, order, lpc_coeffs, lpc_shift);
-        if (lpc_coeffs.size() != order)
-        {
-            lpc_coeffs.assign(order, 0);
-            lpc_shift = 0;
-        }
-
-        bs.Write(lpc_shift, 5);
-        for (int c : lpc_coeffs)
-            bs.Write(c & 0xFFFF, 16);
-
-        // Tầng 2: Deep Neural (Dual-LMS)
-        DeepNeuralPredictor neuralNet;
-        ContextModeler ctxModel;
-
-        // Load Global Context (Pre-training)
-        ctxModel.SetInitialState(global_context);
-
-        for (size_t i = 0; i < n; i++)
-        {
-            int32_t sample = data[i];
-
-            // LPC Predict
-            int64_t sumLPC = 0;
-            for (int j = 0; j < order; j++)
-            {
-                if (i > j)
-                    sumLPC += (int64_t)lpc_coeffs[j] * data[i - 1 - j];
+    // RLE cho Exponent (Float)
+    static void EncodeRLE(const std::vector<uint8_t>& data, BitStream& bs) {
+        if(data.empty()) return;
+        uint8_t last = data[0];
+        int run = 0;
+        for(size_t i=0; i<data.size(); i++) {
+            if(data[i] == last && run < 255) { run++; }
+            else {
+                bs.Write(run, 8); bs.Write(last, 8);
+                last = data[i]; run = 1;
             }
-            int32_t predLPC = (int32_t)(sumLPC >> lpc_shift);
-            int32_t resLPC = sample - predLPC;
-
-            // AI Predict (đoán sai số của LPC)
-            int32_t predNeural = neuralNet.Predict();
-            int32_t finalRes = resLPC - predNeural;
-
-            // Entropy Encode
-            int k = ctxModel.GetK();
-            uint32_t m = EncodeZigZag(finalRes);
-            EncodeSample(bs, m, k);
-
-            // Learning
-            neuralNet.Update(resLPC, predNeural);
-            ctxModel.Update(m);
         }
+        bs.Write(run, 8); bs.Write(last, 8);
     }
 
-    static std::vector<int32_t> DecodeBlock(BitStream &bs, size_t count, uint32_t global_context)
-    {
-        std::vector<int32_t> output;
-        output.reserve(count);
+    static std::vector<uint8_t> DecodeRLE(BitStream& bs, size_t count) {
+        std::vector<uint8_t> out; out.reserve(count);
+        while(out.size() < count) {
+            int run = bs.Read(8);
+            int val = bs.Read(8);
+            for(int i=0; i<run; i++) out.push_back(val);
+        }
+        return out;
+    }
 
-        int order = 16;
-        int lpc_shift = bs.Read(5);
-        std::vector<int> lpc_coeffs;
-        for (int i = 0; i < order; i++)
-            lpc_coeffs.push_back(bs.ReadSigned(16));
+    // Pipeline Encode
+    static void EncodeStream(std::vector<velox_sample_t>& data, BitStream& bs) {
+        // 1. LSB Shift (Giảm bit nhiễu)
+        int shift = LSBShifter::Analyze(data);
+        LSBShifter::Apply(data, shift);
+        bs.Write(shift, 5);
 
-        DeepNeuralPredictor neuralNet;
-        ContextModeler ctxModel;
-        ctxModel.SetInitialState(global_context);
+        // 2. Neural + Context Rice
+        NeuralPredictor ai;
+        uint32_t run_avg = 512; 
 
-        for (size_t i = 0; i < count; i++)
-        {
-            int k = ctxModel.GetK();
-            uint32_t m = DecodeSample(bs, k);
-            int32_t finalRes = DecodeZigZag(m);
+        for(auto val : data) {
+            int32_t pred = ai.Predict();
+            int32_t resid = (int32_t)val - pred;
+            
+            // Context K calculation
+            int k = 0;
+            if(run_avg > 0) { k = 31 - __builtin_clz(run_avg); if(k<0) k=0; }
+            
+            uint32_t m = ZigZag(resid);
+            uint32_t q = m >> k;
+            uint32_t r = m & ((1<<k)-1);
 
-            int32_t predNeural = neuralNet.Predict();
-            int32_t resLPC = finalRes + predNeural;
-
-            int64_t sumLPC = 0;
-            for (int j = 0; j < order; j++)
-            {
-                if (i > j)
-                    sumLPC += (int64_t)lpc_coeffs[j] * output[i - 1 - j];
+            if(q < 32) { // Standard Rice
+                for(uint32_t i=0;i<q;i++) bs.Write(1,1);
+                bs.Write(0,1);
+                if(k>0) bs.Write(r, k);
+            } else { // Escape
+                for(uint32_t i=0;i<32;i++) bs.Write(1,1);
+                bs.Write(0,1);
+                bs.Write(m, 32); 
             }
-            int32_t predLPC = (int32_t)(sumLPC >> lpc_shift);
-            int32_t sample = resLPC + predLPC;
 
-            output.push_back(sample);
-
-            neuralNet.Update(resLPC, predNeural);
-            ctxModel.Update(m);
+            ai.Update((int32_t)val, pred);
+            run_avg = run_avg - (run_avg>>3) + (m>>3);
+            if(run_avg < 1) run_avg = 1;
         }
-        return output;
     }
 
-    // Helper: Tính Global Context (Năng lượng trung bình toàn file)
-    static uint32_t AnalyzeGlobalContext(const std::vector<int16_t> &pcm)
-    {
-        uint64_t sum = 0;
-        // Lấy mẫu nhanh (stride 10)
-        for (size_t i = 0; i < pcm.size(); i += 10)
-            sum += std::abs(pcm[i]);
-        if (pcm.size() == 0)
-            return 256;
-        return (uint32_t)(sum / (pcm.size() / 10));
+    static void DecodeStream(BitStream& bs, size_t count, std::vector<velox_sample_t>& out) {
+        int shift = bs.Read(5);
+        out.resize(count);
+        
+        NeuralPredictor ai;
+        uint32_t run_avg = 512;
+
+        for(size_t i=0; i<count; i++) {
+            int k = 0;
+            if(run_avg > 0) { k = 31 - __builtin_clz(run_avg); if(k<0) k=0; }
+
+            uint32_t q = 0;
+            while(bs.Read(1)) q++;
+            
+            uint32_t m;
+            if(q < 32) {
+                uint32_t r = (k>0) ? bs.Read(k) : 0;
+                m = (q<<k)|r;
+            } else {
+                m = bs.Read(32);
+            }
+
+            int32_t resid = (int32_t)DeZigZag(m);
+            int32_t pred = ai.Predict();
+            int32_t val = resid + pred;
+            
+            out[i] = val;
+            ai.Update(val, pred);
+            run_avg = run_avg - (run_avg>>3) + (m>>3);
+            if(run_avg < 1) run_avg = 1;
+        }
+        LSBShifter::Restore(out, shift);
     }
 
 public:
-    static std::vector<uint8_t> EncodeStereo(const std::vector<int16_t> &pcm)
-    {
+    static std::vector<uint8_t> EncodeBlock(const std::vector<velox_sample_t>& samples, bool is_float, const std::vector<uint8_t>& exps) {
         BitStream bs;
-        uint32_t num_samples = pcm.size() / 2;
-        bs.Write(num_samples, 32);
-
-        // --- GLOBAL HEADER ANALYSIS ---
-        // Tính toán đặc tính chung của bài nhạc để thiết lập AI ngay từ đầu
-        // Giúp AI không phải học lại từ đầu ở mỗi block, tránh lãng phí bit warm-up.
-        uint32_t global_ctx = AnalyzeGlobalContext(pcm);
-        bs.Write(global_ctx, 16); // Lưu vào Header (16 bit)
-
-        const int BLOCK_SIZE = 4096;
-        for (size_t i = 0; i < num_samples; i += BLOCK_SIZE)
-        {
-            size_t end = std::min(i + BLOCK_SIZE, (size_t)num_samples);
-            size_t len = end - i;
-
-            std::vector<int32_t> L, R;
-            L.reserve(len);
-            R.reserve(len);
-            for (size_t j = 0; j < len; j++)
-            {
-                L.push_back(pcm[(i + j) * 2]);
-                R.push_back(pcm[(i + j) * 2 + 1]);
-            }
-
-            // Mid-Side luôn
-            std::vector<int32_t> M, S;
-            for (size_t j = 0; j < len; j++)
-            {
-                M.push_back((L[j] + R[j]) >> 1);
-                S.push_back(L[j] - R[j]);
-            }
-
-            EncodeBlock(M, bs, global_ctx);
-            EncodeBlock(S, bs, global_ctx);
-        }
+        bs.Write(is_float, 1);
+        if(is_float) EncodeRLE(exps, bs);
+        
+        std::vector<velox_sample_t> work = samples;
+        EncodeStream(work, bs);
+        
         bs.Flush();
         return bs.GetData();
     }
 
-    static std::vector<int16_t> DecodeStereo(const uint8_t *data, size_t size)
-    {
+    static void DecodeBlock(const uint8_t* data, size_t size, size_t count, 
+                            std::vector<velox_sample_t>& out_samps, 
+                            std::vector<uint8_t>& out_exps, bool& is_float) {
         BitStream bs(data, size);
-        uint32_t num_samples = bs.Read(32);
-
-        // Đọc Global Header
-        uint32_t global_ctx = bs.Read(16);
-
-        std::vector<int16_t> output;
-        output.reserve(num_samples * 2);
-
-        const int BLOCK_SIZE = 4096;
-        size_t total = 0;
-        while (total < num_samples)
-        {
-            size_t len = std::min((size_t)BLOCK_SIZE, (size_t)(num_samples - total));
-            auto M = DecodeBlock(bs, len, global_ctx);
-            auto S = DecodeBlock(bs, len, global_ctx);
-
-            for (size_t j = 0; j < len; j++)
-            {
-                int32_t m = M[j];
-                int32_t s = S[j];
-                int32_t l = m + ((s + 1) >> 1);
-                int32_t r = m - (s >> 1);
-                output.push_back((int16_t)l);
-                output.push_back((int16_t)r);
-            }
-            total += len;
-        }
-        return output;
+        is_float = bs.Read(1);
+        if(is_float) out_exps = DecodeRLE(bs, count);
+        DecodeStream(bs, count, out_samps);
     }
 };
-
 #endif
