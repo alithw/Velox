@@ -12,7 +12,7 @@ Chạy nén file gốc ra `.vlx` và giải nén ngược lại ra `.wav` để 
 
 ```powershell
 # Nén (Tạo file honey.vlx)
-./velox -c "C:\Users\Ali\Videos\Kirara Magic - Honey (feat. Shion Lee).wav" honey.vlx
+./velox -c <file so sánh.wav> honey.vlx
 
 # Giải nén (Tạo file restored.wav)
 ./velox -d honey.vlx restored.wav
@@ -24,7 +24,7 @@ Chạy nén file gốc ra `.vlx` và giải nén ngược lại ra `.wav` để 
 
 ```powershell
 # Tính Hash file gốc
-Get-FileHash "C:\Users\Ali\Videos\Kirara Magic - Honey (feat. Shion Lee).wav" -Algorithm MD5
+Get-FileHash <file so sánh.wav> -Algorithm MD5
 
 # Tính Hash file phục hồi
 Get-FileHash restored.wav -Algorithm MD5
