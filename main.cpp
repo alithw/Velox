@@ -61,15 +61,6 @@ int main(int argc, char* argv[]) {
         if(isFloat) FormatHandler::SplitFloat32(raw.data(), dSize/4, samples, exponents);
         else FormatHandler::BytesToSamples(raw.data(), dSize/(bits/8), bits, samples);
 
-        // Decorrelate (Mid/Side)
-        if(samples.size() % 2 == 0) {
-            for(size_t i=0; i<samples.size()/2; i++) {
-                velox_sample_t L = samples[i*2];
-                velox_sample_t R = samples[i*2+1];
-                samples[i*2] = (L+R)>>1; samples[i*2+1] = L-R;
-            }
-        }
-
         auto comp = VeloxCodec::EncodeBlock(samples, isFloat, exponents);
 
         std::ofstream out(outF, std::ios::binary);
@@ -103,15 +94,6 @@ int main(int argc, char* argv[]) {
         std::vector<uint8_t> exponents;
         bool isFloat;
         VeloxCodec::DecodeBlock(comp.data(), comp.size(), vh.total_samples, samples, exponents, isFloat);
-
-        // Inverse Decorrelate
-        if(samples.size() % 2 == 0) {
-            for(size_t i=0; i<samples.size()/2; i++) {
-                velox_sample_t M = samples[i*2];
-                velox_sample_t S = samples[i*2+1];
-                samples[i*2] = M + ((S+1)>>1); samples[i*2+1] = M - (S>>1);
-            }
-        }
 
         std::vector<uint8_t> raw;
         if(isFloat) FormatHandler::MergeFloat32(samples, exponents, raw);

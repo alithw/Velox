@@ -6,7 +6,6 @@
 
 class FormatHandler {
 public:
-    // Tách Float: Tách Mantissa (để nén như số nguyên) và Exponent
     static void SplitFloat32(const uint8_t* raw_bytes, size_t count, 
                              std::vector<velox_sample_t>& out_mantissa, 
                              std::vector<uint8_t>& out_exponent) {
@@ -22,16 +21,13 @@ public:
             
             out_exponent[i] = (uint8_t)exp;
             
-            // "Implicit 1" bit của IEEE 754
             if (exp != 0) mant |= 0x800000;
             
-            // Chuyển sang Signed Int64: Nếu Float âm, ta đảo dấu Mantissa
             if (sign) out_mantissa[i] = -(int64_t)mant;
             else      out_mantissa[i] = (int64_t)mant;
         }
     }
 
-    // Gộp Float
     static void MergeFloat32(const std::vector<velox_sample_t>& in_mantissa, 
                              const std::vector<uint8_t>& in_exponent, 
                              std::vector<uint8_t>& out_bytes) {
@@ -46,7 +42,6 @@ public:
 
             if (m_val < 0) { sign = 1; m_val = -m_val; }
             
-            // Bỏ bit ẩn bit 24 (nếu exp != 0)
             uint32_t mant = (uint32_t)(m_val & 0x7FFFFF); 
             
             uint32_t u = (sign << 31) | ((uint32_t)exp << 23) | mant;
@@ -54,7 +49,6 @@ public:
         }
     }
 
-    // Bytes -> Int64 (Hỗ trợ 16, 24, 32 bit)
     static void BytesToSamples(const uint8_t* bytes, size_t count, int bits, std::vector<velox_sample_t>& out) {
         out.resize(count);
         size_t idx = 0;
@@ -64,9 +58,7 @@ public:
             if (bits == 16) {
                 int16_t v; memcpy(&v, &bytes[idx], 2); out[i] = v;
             } else if (bits == 24) {
-                // Đọc 3 byte -> Int32 có dấu
                 uint32_t u = (uint32_t)bytes[idx] | ((uint32_t)bytes[idx+1] << 8) | ((uint32_t)bytes[idx+2] << 16);
-                // Sign extension cho 24-bit (Nếu bit 23 là 1 -> Số âm -> OR với 0xFF000000)
                 if (u & 0x800000) u |= 0xFF000000;
                 out[i] = (int32_t)u;
             } else if (bits == 32) {
@@ -76,10 +68,8 @@ public:
         }
     }
 
-    // Int64 -> Bytes (Fix lỗi thiếu logic 24-bit ở bản cũ)
     static void SamplesToBytes(const std::vector<velox_sample_t>& in, int bits, std::vector<uint8_t>& bytes) {
         int bytes_per_sample = bits / 8;
-        // Pre-allocate để tăng tốc
         size_t current_size = bytes.size();
         bytes.resize(current_size + in.size() * bytes_per_sample);
         uint8_t* ptr = bytes.data() + current_size;
@@ -102,7 +92,6 @@ public:
     }
 };
 
-// LSB Shifter: Loại bỏ bit 0 ở đuôi để nén chặt hơn
 class LSBShifter {
 public:
     static int Analyze(std::vector<velox_sample_t>& block) {
@@ -111,7 +100,6 @@ public:
         for(auto x : block) mask |= (uint64_t)std::abs(x);
         if (mask == 0) return 0;
         
-        // Đếm số bit 0 ở đuôi
         int shift = 0;
         while ((mask & 1) == 0 && shift < 32) {
             mask >>= 1;
