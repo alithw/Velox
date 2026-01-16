@@ -9,20 +9,20 @@
 
 typedef int64_t velox_sample_t; 
 
-// Cấu trúc File Header
+#pragma pack(push, 1)
 struct VeloxHeader {
     uint32_t magic;         // VELX
-    uint16_t version;       // 0x0200
-    uint32_t sample_rate;
-    uint16_t channels;
+    uint16_t version;      
+    uint32_t sample_rate; 
+    uint16_t channels;      
     uint16_t bits_per_sample; 
     uint16_t format_code;   // 1=PCM, 3=Float
     uint64_t total_samples;
-    uint32_t header_blob_size; // Kích thước header gốc của file WAV
-    uint32_t footer_blob_size; // Kích thước footer gốc
+    uint32_t header_blob_size; 
+    uint32_t footer_blob_size; 
 };
+#pragma pack(pop)
 
-// Toán học số nguyên cho AI (Fixed Point Q20.12)
 #define FX_SHIFT 12
 #define FX_ONE   (1 << FX_SHIFT)
 

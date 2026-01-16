@@ -1,4 +1,4 @@
-# Cách kiểm tra:
+## Cách kiểm tra:
 
 ### 1. Biên dịch (Build)
 Compile file `velox.exe`:
@@ -52,5 +52,12 @@ ls honey.vlx, restored.wav, <file so sánh.wav> | Select-Object Name, @{Name="Si
 ```
 
 ---
+
+## VeloxPlayerGUI (hiện chỉ hỗ trợ Windows)
+
+### Biên dịch:
+```powershell
+g++ VeloxPlayerGUI.cpp -o VeloxPlayer -O3 -mwindows -lcomdlg32 -lole32 -lshell32 -lwinmm -lgdi32 -lcomctl32 -static
+```
 
 Codec đang trong quá trình phát triển với thuật toán tối ưu mới, chưa phát hành chính thức nên khả năng xảy ra lỗi cao.

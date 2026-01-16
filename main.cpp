@@ -12,23 +12,31 @@ struct WavHeaderRaw {
 };
 #pragma pack(pop)
 
-bool AnalyzeWav(std::ifstream& f, uint32_t& dPos, uint32_t& dSize, uint32_t& fPos, uint32_t& fSize, uint16_t& fmtCode, uint16_t& bits) {
+bool AnalyzeWav(std::ifstream& f, uint32_t& dPos, uint32_t& dSize, uint32_t& fPos, uint32_t& fSize, 
+                uint16_t& fmtCode, uint16_t& bits, uint32_t& sampleRate, uint16_t& channels) {
     f.seekg(0, std::ios::end);
     uint32_t fTotal = (uint32_t)f.tellg();
     f.seekg(0);
+    
     WavHeaderRaw h;
     f.read((char*)&h, sizeof(h));
     if(strncmp(h.riff,"RIFF",4)!=0) return false;
+    
     fmtCode = h.audioFormat;
     bits = h.bitsPerSample;
+    // --- LẤY THÔNG TIN QUAN TRỌNG ---
+    sampleRate = h.sampleRate;
+    channels = h.channels;
     
+    // Scan chunks
     f.seekg(12);
     char buf[4];
     while(f.read(buf, 4)) {
         uint32_t cSize; f.read((char*)&cSize, 4);
         uint32_t cur = (uint32_t)f.tellg();
         if(strncmp(buf, "data", 4)==0) {
-            dPos = cur; dSize = cSize;
+            dPos = cur;
+            dSize = cSize;
             fPos = cur + cSize + (cSize%2);
             fSize = (fPos < fTotal) ? (fTotal - fPos) : 0;
             return true;
@@ -48,8 +56,13 @@ int main(int argc, char* argv[]) {
     if(mode == "-c") {
         std::ifstream in(inF, std::ios::binary);
         uint32_t dPos, dSize, fPos, fSize;
-        uint16_t fmtCode, bits;
-        if(!AnalyzeWav(in, dPos, dSize, fPos, fSize, fmtCode, bits)) { std::cout << "Wav Error\n"; return 1; }
+        uint16_t fmtCode, bits, channels;
+        uint32_t sampleRate;
+        
+        // Gọi hàm phân tích mới
+        if(!AnalyzeWav(in, dPos, dSize, fPos, fSize, fmtCode, bits, sampleRate, channels)) { 
+            std::cout << "Wav Error\n"; return 1; 
+        }
 
         std::vector<uint8_t> raw(dSize);
         in.seekg(dPos); in.read((char*)raw.data(), dSize);
@@ -61,10 +74,20 @@ int main(int argc, char* argv[]) {
         if(isFloat) FormatHandler::SplitFloat32(raw.data(), dSize/4, samples, exponents);
         else FormatHandler::BytesToSamples(raw.data(), dSize/(bits/8), bits, samples);
 
+        // Decorrelate (Mid/Side) - GIỮ LẠI ĐỂ ĐẢM BẢO TỶ LỆ NÉN TỐT NHƯ VỪA RỒI
+        // Codec v2.0 đã tự làm Adaptive, nhưng logic M/S tĩnh này giúp đảm bảo 
+        // dữ liệu đầu vào sạch cho Neural ở bước đầu.
+        // Tuy nhiên, để đúng chuẩn v2.0 Adaptive, ta nên để Codec tự quyết.
+        // Nhưng logic main cũ bạn chạy ra 60-80% là do Codec tự làm.
+        // Ở đây ta KHÔNG can thiệp tay nữa.
+
         auto comp = VeloxCodec::EncodeBlock(samples, isFloat, exponents);
 
         std::ofstream out(outF, std::ios::binary);
-        VeloxHeader vh = {0x584C4556, 0x0200, 0, 0, (uint16_t)bits, fmtCode, (uint64_t)samples.size(), dPos, fSize};
+        
+        // --- SỬA LỖI TẠI ĐÂY: Ghi đúng SampleRate và Channels ---
+        VeloxHeader vh = {0x584C4556, 0x0200, sampleRate, channels, (uint16_t)bits, fmtCode, (uint64_t)samples.size(), dPos, fSize};
+        
         out.write((char*)&vh, sizeof(vh));
 
         std::vector<uint8_t> hData(dPos);
