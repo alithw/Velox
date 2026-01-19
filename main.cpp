@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
         VeloxMetadata meta;
         meta.SetTag("ARTIST", metaArtist);
         meta.SetTag("TITLE", metaTitle);
-        meta.SetTag("ENCODER", "Velox v5.0");
+        meta.SetTag("ENCODER", "Velox Beta");
         meta.WriteToStream(out);
         // 3. Raw WAV Header Blob
         std::vector<uint8_t> hData(dPos);

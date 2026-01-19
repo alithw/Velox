@@ -11,11 +11,11 @@ g++ main.cpp -o velox -O3
 Chạy nén file gốc ra `.vlx` và giải nén ngược lại ra `.wav` để kiểm tra.
 
 ```powershell
-# Nén (Tạo file honey.vlx)
-./velox -c <file so sánh.wav> honey.vlx
+# Nén 
+Encode: velox -c input.wav output.vlx [Artist] [Title] #Ghi Metadata
 
-# Giải nén (Tạo file restored.wav)
-./velox -d honey.vlx restored.wav
+# Giải nén 
+Decode: velox -d input.vlx output.wav
 ```
 
 ### 3. Kiểm tra toàn vẹn dữ liệu (Verification)
