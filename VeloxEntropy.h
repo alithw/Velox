@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
-// --- BITSTREAM READER/WRITER TỐI ƯU ---
+// --- BITSTREAM READER/WRITER ---
 class BitStreamWriter {
     std::vector<uint8_t> buffer;
     uint64_t bit_acc = 0; int bit_cnt = 0;
