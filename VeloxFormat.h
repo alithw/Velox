@@ -11,35 +11,29 @@ class FormatHandler
 {
 public:
     // --- STRICT FLOAT ANALYZER ---
-    // Kiểm tra xem có thể chuyển Float về Int mà không mất dù chỉ 1 bit không?
     static int DetectPseudoFloat(const uint8_t *raw_bytes, size_t count)
     {
         const float *f_ptr = (const float *)raw_bytes;
         bool fit16 = true;
         bool fit24 = true;
 
-        // Check toàn bộ file (không check mẫu vì cần bit-perfect)
-        // Tuy nhiên để nhanh, ta check bước nhảy (stride)
         size_t stride = 1;
         if (count > 100000)
-            stride = 4; // Check 25% mẫu cho nhanh nhưng vẫn an toàn
+            stride = 4; 
 
         for (size_t i = 0; i < count; i += stride)
         {
             float f = f_ptr[i];
-            // Bỏ qua số 0 và vô cực/NaN
             if (f == 0.0f || !std::isfinite(f))
                 continue;
 
-            // Test 16-bit
             if (fit16)
             {
                 float s16 = f * 32768.0f;
-                // Round trip check: Int -> Float phải khớp bit gốc
                 int32_t i16 = (int32_t)std::round(s16);
                 float back16 = (float)i16 * (1.0f / 32768.0f);
                 if (back16 != f)
-                    fit16 = false; // Sai bit -> Loại
+                    fit16 = false; 
             }
 
             // Test 24-bit
@@ -53,7 +47,7 @@ public:
             }
 
             if (!fit16 && !fit24)
-                return 0; // Không thể nén
+                return 0; 
         }
 
         if (fit16)
@@ -63,7 +57,6 @@ public:
         return 0;
     }
 
-    // Chuyển Float -> Int (Lossless Demotion)
     static void DemoteFloatToInt(const uint8_t *raw_bytes, size_t count, int target_bits, std::vector<velox_sample_t> &out)
     {
         out.resize(count);
@@ -76,13 +69,10 @@ public:
         }
     }
 
-    // Khôi phục Int -> Float (Promotion)
-    // PHẢI KHỚP TUYỆT ĐỐI VỚI HÀM DETECT
     static void PromoteIntToFloat(const std::vector<velox_sample_t> &in, int src_bits, std::vector<uint8_t> &out_bytes)
     {
         out_bytes.resize(in.size() * 4);
         float *f_ptr = (float *)out_bytes.data();
-        // Dùng float literal để đảm bảo độ chính xác phép chia
         float scale = (src_bits == 16) ? (1.0f / 32768.0f) : (1.0f / 8388608.0f);
 
         for (size_t i = 0; i < in.size(); i++)
@@ -91,7 +81,6 @@ public:
         }
     }
 
-    // ... (Giữ nguyên các hàm SplitFloat32, MergeFloat32, BytesToSamples cũ)
     static void SplitFloat32(const uint8_t *raw_bytes, size_t count,
                              std::vector<velox_sample_t> &out_mantissa,
                              std::vector<uint8_t> &out_exponent)
@@ -200,7 +189,7 @@ public:
     }
 };
 
-// LSB Shifter (Giữ nguyên)
+// LSB Shifter 
 class LSBShifter
 {
 public:
