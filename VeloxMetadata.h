@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <cstdint>
 
-// --- HELPER FUNCTIONS FOR ENDIANNESS ---
+// Helper functions for endianness
 static void Write32LE(std::vector<uint8_t> &buf, uint32_t val)
 {
     buf.push_back(val & 0xFF);
@@ -45,7 +45,7 @@ static std::string ReadString(const uint8_t *buf, size_t &offset, size_t maxLen)
     return s;
 }
 
-// --- VELOX METADATA CLASS (VORBIS STYLE) ---
+// Velox Metadata class (Vorbis style)
 class VeloxMetadata
 {
 public:
@@ -61,8 +61,7 @@ public:
 
     bool hasCoverArt = false;
 
-    // --- API ---
-
+    // API
     void SetTag(std::string key, std::string value)
     {
         // Vorbis keys are case-insensitive ASCII. Uppercase for consistency.
@@ -85,13 +84,13 @@ public:
         hasCoverArt = !imageData.empty();
     }
 
-    // --- SERIALIZATION (GHI FILE) ---
+    // Serialization
     void WriteToStream(std::ofstream &out)
     {
         std::vector<uint8_t> block;
 
         // 1. Vendor String (Required by Vorbis)
-        WriteString(block, "Velox Codec v4.0");
+        WriteString(block, "Velox Codec v1.0");
 
         // 2. User Comment List Length
         Write32LE(block, (uint32_t)tags.size());

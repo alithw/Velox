@@ -7,8 +7,12 @@
 #include "VeloxThreads.h"
 #include <numeric>
 #include <future>
+#include <vector>
+#include <cmath>
+#include <cstring>
+#include <algorithm>
 
-// --- NEURAL PREDICTOR (Giữ nguyên) ---
+// --- NEURAL PREDICTOR ---
 class NeuralPredictor
 {
     static const int ORDER = 12;
@@ -21,6 +25,7 @@ public:
         memset(weights, 0, sizeof(weights));
         memset(history, 0, sizeof(history));
     }
+
     inline int32_t Predict()
     {
         int64_t sum = 0;
@@ -28,13 +33,16 @@ public:
             sum += (int64_t)history[i] * weights[i];
         return (int32_t)(sum >> 11);
     }
+
     inline void Update(int32_t actual, int32_t pred)
     {
         int32_t err = actual - pred;
         int sign = (err > 0) ? 1 : ((err < 0) ? -1 : 0);
         if (sign == 0)
             return;
+
         int delta = (std::abs(err) > 1024) ? 16 : 4;
+
         for (int i = 0; i < ORDER; i++)
         {
             int h_sign = (history[i] > 0) ? 1 : ((history[i] < 0) ? -1 : 0);
@@ -42,6 +50,7 @@ public:
                 weights[i] += delta;
             else if (h_sign != 0)
                 weights[i] -= delta;
+
             if ((i & 7) == 0)
             {
                 if (weights[i] > 0)
@@ -58,9 +67,7 @@ public:
 
 class VeloxCodec
 {
-    static inline uint32_t ZigZag(int64_t n) { return (uint32_t)((n << 1) ^ (n >> 63)); }
-    static inline int64_t DeZigZag(uint32_t n) { return (int64_t)((n >> 1) ^ -(int64_t)(n & 1)); }
-
+    // LPC Calculation
     static void ComputeLPC(const std::vector<velox_sample_t> &data, int order, std::vector<int> &coeffs, int &shift)
     {
         if (data.empty())
@@ -104,6 +111,7 @@ class VeloxCodec
             coeffs[i - 1] = (int)std::floor(a[i][order] * (1 << shift) + 0.5);
     }
 
+    // --- WORKER: Try Compress ---
     static void TryCompressChannel(const std::vector<velox_sample_t> &input_data, BitStreamWriter &bs, bool high_res_mode)
     {
         std::vector<velox_sample_t> work_data = input_data;
@@ -135,7 +143,8 @@ class VeloxCodec
         std::vector<int> lpc_coeffs;
         ComputeLPC(work_data, order, lpc_coeffs, lpc_shift);
 
-        // Simple Order: 8
+        // Write order code
+        bs.Write((order / 4) - 1, 2); // 8 -> code 1
         bs.Write(lpc_shift, 5);
         for (int c : lpc_coeffs)
             bs.Write(c & 0xFFFF, 16);
@@ -179,6 +188,7 @@ class VeloxCodec
         }
     }
 
+    // --- WORKER: Decompress ---
     static void DecodeChannelWorker(BitStreamReader &bs, size_t count, std::vector<velox_sample_t> &out, bool high_res_mode)
     {
         out.resize(count);
@@ -190,7 +200,11 @@ class VeloxCodec
         }
 
         int shift_lsb = bs.Read(5);
-        int order = 8;
+
+        // Read Order
+        int order_code = bs.Read(2);
+        int order = (order_code + 1) * 4;
+
         int lpc_shift = bs.Read(5);
         std::vector<int> lpc_coeffs(order);
         for (int i = 0; i < order; i++)
@@ -238,15 +252,12 @@ class VeloxCodec
         }
     }
 
-    // --- FIX RAW BLOCK WRITER ---
     static void WriteRawBlock(const std::vector<velox_sample_t> &samples, BitStreamWriter &bs)
     {
-        // ĐÃ XÓA: bs.Write(0, 1); (Vì Lambda đã ghi cờ này rồi)
         for (auto s : samples)
             bs.Write((uint32_t)((s << 1) ^ (s >> 63)), 32);
     }
 
-    // ReadRawBlock (Giữ nguyên)
     static void ReadRawBlock(BitStreamReader &bs, size_t count, std::vector<velox_sample_t> &out)
     {
         out.resize(count);
@@ -258,7 +269,6 @@ class VeloxCodec
         }
     }
 
-    // Helpers RLE (Giữ nguyên)
     static void EncodeRLE(const std::vector<uint8_t> &data, BitStreamWriter &bs)
     {
         if (data.empty())
@@ -309,7 +319,6 @@ public:
         {
             BitStreamWriter bs;
 
-            // SMART FLOAT
             int float_mode = 0;
             if (is_float)
             {
@@ -351,7 +360,7 @@ public:
             std::vector<std::future<std::vector<uint8_t>>> futures;
 
             if (total % 2 != 0)
-            {
+            { // Mono
                 auto task = [samples, high_res_mode]()
                 {
                     BitStreamWriter bTemp;
@@ -361,7 +370,7 @@ public:
                     if (bTemp.GetData().size() > samples.size() * 4)
                     {
                         BitStreamWriter bRaw;
-                        bRaw.Write(0, 1); // Raw Flag
+                        bRaw.Write(0, 1);
                         WriteRawBlock(samples, bRaw);
                         bRaw.Flush();
                         return bRaw.GetData();
@@ -371,7 +380,7 @@ public:
                 futures.push_back(GetPool().enqueue(task));
             }
             else
-            {
+            { // Stereo
                 for (size_t i = 0; i < total; i += SUB_BLOCK)
                 {
                     size_t end = std::min(i + SUB_BLOCK, total);

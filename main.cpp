@@ -9,7 +9,7 @@
 #include "VeloxIO.h"
 #include "VeloxTagBridge.h"
 
-// --- WAV HEADER GENERATOR ---
+// WAV Header Generator
 // Generate standard WAV header (44 bytes)
 std::vector<uint8_t> GenerateWavHeader(uint32_t sampleRate, uint16_t channels, uint16_t bits, uint32_t dataSize, bool isFloat)
 {
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     std::string inF = argv[2];
     std::string outF = argv[3];
 
-    // --- ENCODE MODE ---
+    // Encode mode
     if (mode == "-c")
     {
         std::string metaArtist = "Unknown Artist";

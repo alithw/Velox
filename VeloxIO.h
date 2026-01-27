@@ -94,7 +94,7 @@ private:
         return bigEndian ? EndianUtils::Swap16(v) : v;
     }
 
-    // --- WAV PARSER (Little Endian) ---
+    // WAV Parser (Little Endian)
     static bool ParseWAV(std::ifstream &f, AudioMetadata &meta)
     {
         meta.isBigEndian = false;
@@ -133,7 +133,7 @@ private:
         return false;
     }
 
-    // --- AIFF PARSER (Big Endian) ---
+    // AIFF Parser (Big Endian)
     static bool ParseAIFF(std::ifstream &f, AudioMetadata &meta)
     {
         meta.isBigEndian = true;

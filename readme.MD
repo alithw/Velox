@@ -14,6 +14,8 @@ Velox is a sophisticated audio compression system designed to minimize file size
 - **Metadata Support**: Vorbis-style metadata tags and cover art support
 - **Float Detection**: Intelligent demoting of float samples to integer representation
 - **Multi-threaded Processing**: Parallel encoding/decoding for improved performance
+- **AIFF Support**: Encode/decode AIFF files in addition to WAV
+- **Smart Metadata Extraction**: Automatic extraction of ID3v2 tags and RIFF INFO from source files
 
 ## Architecture
 
@@ -56,22 +58,24 @@ g++ VeloxPlayerGUI.cpp -o VeloxPlayer -O3 -mwindows -lcomdlg32 -lole32 -lshell32
 
 ### Encoding
 
-Compress a WAV file to Velox format with optional metadata:
+Compress a WAV or AIFF file to Velox format with optional metadata:
 
 ```powershell
 velox -c input.wav output.vlx [Artist] [Title]
+velox -c input.aif output.vlx [Artist] [Title]
 ```
 
 **Parameters:**
 - `-c`: Encode mode
-- `input.wav`: Source WAV file
+- `input.wav/aif`: Source WAV or AIFF file
 - `output.vlx`: Output Velox file
-- `[Artist]` (optional): Artist metadata
-- `[Title]` (optional): Title metadata
+- `[Artist]` (optional): Artist metadata (auto-extracted if not provided)
+- `[Title]` (optional): Title metadata (auto-extracted if not provided)
 
 **Example:**
 ```powershell
 velox -c song.wav song.vlx "John Doe" "My Song"
+velox -c song.aif song.vlx                           # Auto-extract metadata from AIFF
 ```
 
 ### Decoding
@@ -147,7 +151,7 @@ Write-Host "Compression ratio: $ratio%"
 - **Windows**: Fully supported (both CLI and GUI)
 - **Linux/macOS**: Not currently supported
 
-The GUI player (`VeloxPlayerGUI`) requires Windows-specific APIs (Windows.h, winmm.h, etc.) and is not compatible with other platforms.
+The GUI player (`VeloxPlayerGUI`) requires Windows-specific APIs (Windows.h, winmm.lib, GDI+, etc.) and is not compatible with other platforms. However, the CLI encoder/decoder tools may be portable with modification.
 
 ## File Format
 
@@ -177,14 +181,19 @@ The GUI player (`VeloxPlayerGUI`) requires Windows-specific APIs (Windows.h, win
 
 ### Encoding Process
 
-1. **WAV Analysis**: Dynamic chunk-based WAV parser supporting various PCM formats
-2. **Format Detection**: Identifies float vs. integer samples and attempts lossless float demotion
-3. **LSB Analysis**: Detects and separates low-order bits for optimization
-4. **LPC Calculation**: Computes 12-order LPC coefficients using Levinson-Durbin algorithm
-5. **Neural Prediction**: Adapts prediction weights based on prediction errors
-6. **LTP Matching**: Searches audio history for repeating patterns
-7. **Entropy Encoding**: Variable-length encodes residual values
-8. **Metadata Embedding**: Attaches Vorbis-style tags and optional cover art
+1. **Audio Format Detection**: Automatically detects WAV or AIFF format
+2. **Metadata Extraction**: Intelligently extracts tags from source files:
+   - **ID3v2 Tags** (WAV/MP3): Reads TIT2, TPE1, TALB frames
+   - **RIFF INFO Chunks** (WAV): Reads IART, INAM metadata
+   - **AIFF Comments**: Reads ANNO and other comment fields
+   - **Manual Override**: Command-line arguments override auto-detected metadata
+3. **Format Detection**: Identifies float vs. integer samples and attempts lossless float demotion
+4. **LSB Analysis**: Detects and separates low-order bits for optimization
+5. **LPC Calculation**: Computes 12-order LPC coefficients using Levinson-Durbin algorithm
+6. **Neural Prediction**: Adapts prediction weights based on prediction errors
+7. **LTP Matching**: Searches audio history for repeating patterns
+8. **Entropy Encoding**: Variable-length encodes residual values
+9. **Metadata Embedding**: Attaches Vorbis-style tags and optional cover art
 
 ### Key Algorithms
 
@@ -207,16 +216,19 @@ The GUI player (`VeloxPlayerGUI`) requires Windows-specific APIs (Windows.h, win
 ## Example Workflow
 
 ```powershell
-# 1. Encode an audio file
-velox -c album_track.wav album_track.vlx "Artist Name" "Track Title"
+# 1. Encode a WAV file with auto-detected metadata
+velox -c album_track.wav album_track.vlx
 
-# 2. Verify compression
+# 2. Encode an AIFF file with manual metadata override
+velox -c album_track.aif album_track.vlx "Artist Name" "Track Title"
+
+# 3. Verify compression
 ls album_track.wav, album_track.vlx | Format-Table Name, @{Name="Size(MB)";Expression={$_.Length / 1MB}}
 
-# 3. Decode for verification
+# 4. Decode for verification
 velox -d album_track.vlx album_track_restored.wav
 
-# 4. Verify integrity
+# 5. Verify integrity
 (Get-FileHash album_track.wav -Algorithm MD5).Hash
 (Get-FileHash album_track_restored.wav -Algorithm MD5).Hash
 ```
