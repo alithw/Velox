@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import platform
+import subprocess
 import shutil
 from pathlib import Path
 
@@ -46,3 +47,5 @@ if platform.system() == "Windows":
                 continue
             print(f"Copying {full_dll_path} to {install_path / first_str}")
             shutil.copy(full_dll_path, install_path / first_str)
+    # Qt specific workaround
+    subprocess.call(f"{msys2_path}/windeployqt6.exe {install_path}/velox_player.exe")
