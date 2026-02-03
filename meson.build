@@ -3,6 +3,8 @@ project('velox', 'cpp',
   default_options: ['cpp_std=c++17']
 )
 
+meson.add_install_script('scripts/copy_deps.py')
+
 cpp = meson.get_compiler('cpp')
 qt6 = import('qt6')
 
