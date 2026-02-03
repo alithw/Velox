@@ -58,10 +58,11 @@ signals:
 
 private:
     bool startAudio();
+    bool waitForPrebuffer(int timeoutMs);
     void stopAudio();
     bool loadFile(const QString &path);
-    void startDecode();
-    void decodeLoop();
+    void startDecode(uint64_t session);
+    void decodeLoop(uint64_t session);
     void handleAudioStateChanged(QAudio::State state);
 
     static int16_t convertSample(velox_sample_t raw, uint8_t exp, bool isFloat, int floatMode, int bits);
@@ -79,6 +80,11 @@ private:
     std::atomic<qint64> currentFrameAtomic;
     std::atomic<qint64> totalFramesAtomic;
     std::atomic<uint32_t> sampleRateAtomic;
+    std::atomic<qint64> framesPlayedAtomic;
+    std::atomic<qint64> pauseFrameAtomic;
+    std::atomic<uint64_t> sessionCounter;
+    std::atomic<uint64_t> activeSession;
+    std::atomic<uint64_t> audioSession;
 
     std::atomic<qint64> seekTargetFrame;
     uint64_t totalSamplesValue;
@@ -95,6 +101,8 @@ private:
     QImage coverArtValue;
 
     std::vector<uint8_t> compData;
+    size_t bytesPerFrame;
+    size_t prebufferBytes;
 };
 
 #endif

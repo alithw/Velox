@@ -166,8 +166,16 @@ public:
     void resetBuffer(size_t capacityBytes)
     {
         ring.resetBuffer(capacityBytes);
+        frameRemainderBytes = 0;
         if (!isOpen())
             open(QIODevice::ReadOnly);
+    }
+
+    void configureFrames(std::atomic<qint64> *counter, size_t bytesPerFrameValue)
+    {
+        framesCounter = counter;
+        bytesPerFrame = bytesPerFrameValue;
+        frameRemainderBytes = 0;
     }
 
     void clear()
@@ -205,7 +213,16 @@ protected:
     {
         if (maxlen <= 0)
             return 0;
-        return static_cast<qint64>(ring.read(reinterpret_cast<uint8_t *>(data), static_cast<size_t>(maxlen)));
+        size_t bytesRead = ring.read(reinterpret_cast<uint8_t *>(data), static_cast<size_t>(maxlen));
+        if (framesCounter && bytesPerFrame > 0)
+        {
+            size_t total = frameRemainderBytes + bytesRead;
+            size_t frames = total / bytesPerFrame;
+            frameRemainderBytes = total % bytesPerFrame;
+            if (frames > 0)
+                framesCounter->fetch_add(static_cast<qint64>(frames));
+        }
+        return static_cast<qint64>(bytesRead);
     }
 
     qint64 writeData(const char *, qint64) override
@@ -220,11 +237,14 @@ protected:
 
 private:
     AudioRingBuffer ring;
+    std::atomic<qint64> *framesCounter = nullptr;
+    size_t bytesPerFrame = 0;
+    size_t frameRemainderBytes = 0;
 };
 
 VeloxQtPlayerEngine::VeloxQtPlayerEngine(QObject *parent)
     : QObject(parent),
-      audioDevice(new AudioBufferDevice(this)),
+      audioDevice(nullptr),
       audioSink(nullptr),
       stopRequested(false),
       seekRequested(false),
@@ -233,12 +253,19 @@ VeloxQtPlayerEngine::VeloxQtPlayerEngine(QObject *parent)
       currentFrameAtomic(0),
       totalFramesAtomic(0),
       sampleRateAtomic(0),
+      framesPlayedAtomic(0),
+      pauseFrameAtomic(0),
+      sessionCounter(0),
+      activeSession(0),
+      audioSession(0),
       seekTargetFrame(0),
       totalSamplesValue(0),
       channelsValue(0),
       bitsPerSampleValue(0),
       formatCodeValue(0),
-      isFloatValue(false)
+      isFloatValue(false),
+      bytesPerFrame(0),
+      prebufferBytes(0)
 {
 }
 
@@ -249,12 +276,17 @@ VeloxQtPlayerEngine::~VeloxQtPlayerEngine()
 
 bool VeloxQtPlayerEngine::playFile(const QString &path)
 {
+    uint64_t session = sessionCounter.fetch_add(1) + 1;
+    activeSession = session;
     stop();
     if (!loadFile(path))
         return false;
     if (!startAudio())
         return false;
-    startDecode();
+    startDecode(session);
+    waitForPrebuffer(500);
+    if (audioSink)
+        audioSink->start(audioDevice);
     emit metadataChanged();
     emit stateChanged();
     return true;
@@ -273,6 +305,8 @@ void VeloxQtPlayerEngine::stop()
     stopAudio();
     playing = false;
     currentFrameAtomic = 0;
+    framesPlayedAtomic = 0;
+    pauseFrameAtomic = 0;
     stopRequested = false;
     emit stateChanged();
 }
@@ -282,8 +316,15 @@ void VeloxQtPlayerEngine::pause()
     if (!playing || paused)
         return;
     paused = true;
+    pauseFrameAtomic = framesPlayedAtomic.load();
+    seekTargetFrame = pauseFrameAtomic.load();
+    currentFrameAtomic = pauseFrameAtomic.load();
+    framesPlayedAtomic = pauseFrameAtomic.load();
+    seekRequested = true;
     if (audioSink)
-        audioSink->suspend();
+        audioSink->stop();
+    if (audioDevice)
+        audioDevice->clear();
     emit stateChanged();
 }
 
@@ -292,8 +333,15 @@ void VeloxQtPlayerEngine::resume()
     if (!playing || !paused)
         return;
     paused = false;
+    seekTargetFrame = pauseFrameAtomic.load();
+    currentFrameAtomic = pauseFrameAtomic.load();
+    framesPlayedAtomic = pauseFrameAtomic.load();
+    seekRequested = true;
+    if (audioDevice)
+        audioDevice->clear();
+    waitForPrebuffer(400);
     if (audioSink)
-        audioSink->resume();
+        audioSink->start(audioDevice);
     emit stateChanged();
 }
 
@@ -317,6 +365,7 @@ void VeloxQtPlayerEngine::seekFrame(qint64 frame)
         frame = totalFramesAtomic - 1;
     seekTargetFrame = frame;
     currentFrameAtomic = frame;
+    framesPlayedAtomic = frame;
     seekRequested = true;
     if (audioDevice)
         audioDevice->clear();
@@ -339,7 +388,7 @@ bool VeloxQtPlayerEngine::hasTrack() const
 
 qint64 VeloxQtPlayerEngine::currentFrame() const
 {
-    return currentFrameAtomic.load();
+    return framesPlayedAtomic.load();
 }
 
 qint64 VeloxQtPlayerEngine::totalFrames() const
@@ -395,6 +444,8 @@ QString VeloxQtPlayerEngine::filePath() const
 bool VeloxQtPlayerEngine::startAudio()
 {
     stopAudio();
+    audioDevice = new AudioBufferDevice(this);
+    audioSession = activeSession.load();
     QAudioDevice device = QMediaDevices::defaultAudioOutput();
     audioFormat.setSampleRate(static_cast<int>(sampleRateAtomic.load()));
     audioFormat.setChannelCount(static_cast<int>(channelsValue));
@@ -409,14 +460,36 @@ bool VeloxQtPlayerEngine::startAudio()
     connect(audioSink, &QAudioSink::stateChanged, this, &VeloxQtPlayerEngine::handleAudioStateChanged);
 
     size_t bytesPerSecond = static_cast<size_t>(sampleRateAtomic.load()) * static_cast<size_t>(channelsValue) * sizeof(int16_t);
+    bytesPerFrame = static_cast<size_t>(channelsValue) * sizeof(int16_t);
     size_t capacity = bytesPerSecond * 2;
     if (capacity < 256 * 1024)
         capacity = 256 * 1024;
     if (capacity > 8 * 1024 * 1024)
         capacity = 8 * 1024 * 1024;
+    prebufferBytes = bytesPerSecond / 5;
+    if (prebufferBytes < 64 * 1024)
+        prebufferBytes = 64 * 1024;
+    if (prebufferBytes > capacity / 2)
+        prebufferBytes = capacity / 2;
+
+    audioDevice->configureFrames(&framesPlayedAtomic, bytesPerFrame);
     audioDevice->resetBuffer(capacity);
-    audioSink->start(audioDevice);
     return true;
+}
+
+bool VeloxQtPlayerEngine::waitForPrebuffer(int timeoutMs)
+{
+    if (!audioDevice || prebufferBytes == 0)
+        return true;
+    int waited = 0;
+    while (!stopRequested && audioDevice->bufferedBytes() < prebufferBytes)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        waited += 10;
+        if (timeoutMs > 0 && waited >= timeoutMs)
+            break;
+    }
+    return audioDevice->bufferedBytes() >= prebufferBytes;
 }
 
 void VeloxQtPlayerEngine::stopAudio()
@@ -428,7 +501,12 @@ void VeloxQtPlayerEngine::stopAudio()
         audioSink = nullptr;
     }
     if (audioDevice)
+    {
         audioDevice->close();
+        delete audioDevice;
+        audioDevice = nullptr;
+    }
+    audioSession = 0;
 }
 
 bool VeloxQtPlayerEngine::loadFile(const QString &path)
@@ -467,6 +545,7 @@ bool VeloxQtPlayerEngine::loadFile(const QString &path)
     sampleRateAtomic = vh.sample_rate;
     totalFramesAtomic = static_cast<qint64>(vh.total_samples / vh.channels);
     currentFrameAtomic = 0;
+    framesPlayedAtomic = 0;
     seekTargetFrame = 0;
 
     VeloxMetadata meta;
@@ -517,7 +596,7 @@ bool VeloxQtPlayerEngine::loadFile(const QString &path)
     return true;
 }
 
-void VeloxQtPlayerEngine::startDecode()
+void VeloxQtPlayerEngine::startDecode(uint64_t session)
 {
     if (decodeThread.joinable())
         decodeThread.join();
@@ -525,11 +604,13 @@ void VeloxQtPlayerEngine::startDecode()
     seekRequested = false;
     paused = false;
     playing = true;
-    decodeThread = std::thread(&VeloxQtPlayerEngine::decodeLoop, this);
+    decodeThread = std::thread(&VeloxQtPlayerEngine::decodeLoop, this, session);
 }
 
-void VeloxQtPlayerEngine::decodeLoop()
+void VeloxQtPlayerEngine::decodeLoop(uint64_t session)
 {
+    if (session != activeSession.load())
+        return;
     VeloxCodec::StreamingDecoder decoder(compData.data(), compData.size(), totalSamplesValue);
     int floatMode = decoder.GetFloatMode();
     bool isFloat = isFloatValue;
@@ -543,6 +624,8 @@ void VeloxQtPlayerEngine::decodeLoop()
 
     while (!stopRequested)
     {
+        if (session != activeSession.load())
+            return;
         if (seekRequested)
         {
             if (audioDevice)
@@ -555,6 +638,8 @@ void VeloxQtPlayerEngine::decodeLoop()
             uint8_t de;
             while (samplesDecoded < targetSample && !stopRequested)
             {
+                if (session != activeSession.load())
+                    return;
                 if (!decoder.DecodeNext(dv, de))
                     break;
                 samplesDecoded++;
@@ -572,6 +657,8 @@ void VeloxQtPlayerEngine::decodeLoop()
         pcmBatch.clear();
         for (int i = 0; i < batchSize; ++i)
         {
+            if (stopRequested || session != activeSession.load())
+                return;
             velox_sample_t val;
             uint8_t exp;
             if (!decoder.DecodeNext(val, exp))
@@ -581,6 +668,8 @@ void VeloxQtPlayerEngine::decodeLoop()
                     if (!audioDevice->push(reinterpret_cast<const uint8_t *>(pcmBatch.data()), pcmBatch.size() * sizeof(int16_t)))
                         return;
                 }
+                if (session != activeSession.load())
+                    return;
                 audioDevice->setFinished();
                 currentFrameAtomic = static_cast<qint64>(samplesDecoded / ch);
                 return;
@@ -598,6 +687,10 @@ void VeloxQtPlayerEngine::decodeLoop()
 void VeloxQtPlayerEngine::handleAudioStateChanged(QAudio::State state)
 {
     if (stopRequested)
+        return;
+    if (audioSession.load() != activeSession.load())
+        return;
+    if (paused)
         return;
     if (state == QAudio::IdleState)
     {
