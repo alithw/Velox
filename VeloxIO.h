@@ -195,6 +195,7 @@ private:
             {
                 uint32_t offset = Read32(f, true);
                 uint32_t blockSize = Read32(f, true);
+                (void)blockSize;
                 meta.dataPos = (uint32_t)f.tellg() + offset;
                 meta.dataSize = size - 8; // Minus offset/blockSize fields
                 return true;
