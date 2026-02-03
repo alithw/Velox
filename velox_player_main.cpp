@@ -13,8 +13,7 @@ int main(int argc, char *argv[])
     {
         QStringList paths = args.mid(1);
         window.addFiles(paths);
-        if (!paths.isEmpty())
-            window.playIndex(0);
+        window.playIndex(0);
     }
 
     window.resize(640, 520);

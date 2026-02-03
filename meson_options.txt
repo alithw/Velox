@@ -7,7 +7,7 @@ option('build_cli',
 option('build_gui',
   type: 'boolean',
   value: true,
-  description: 'Build the Windows GUI player'
+  description: 'Build the cross-platform Qt GUI player'
 )
 
 option('static_mingw',
