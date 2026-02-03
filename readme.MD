@@ -35,20 +35,54 @@ Velox is a sophisticated audio compression system designed to minimize file size
 
 ### Requirements
 
-- g++ compiler with C++11 or later
 - Windows OS (currently Windows-only)
+- MSYS2 (MinGW or Clang toolchain) with Meson + Ninja
+- C++11 compiler
 
-### Command-Line Tool
+Install on MSYS2 (UCRT64 example):
 
-Compile the Velox encoder/decoder:
+```powershell
+pacman -S --needed mingw-w64-ucrt-x86_64-toolchain meson ninja
+```
+
+Note: MSVC is not supported yet (uses GCC/Clang builtins). MSYS2 GCC/Clang is supported.
+
+### Meson Build (recommended)
+
+Configure and build:
+
+```powershell
+meson setup build --buildtype=release
+meson compile -C build
+```
+
+Outputs:
+
+- CLI: `build/velox.exe`
+- GUI: `build/velox_player.exe`
+
+Common options:
+
+- Disable GUI: `-Dbuild_gui=false` (required on non-Windows)
+- Disable CLI: `-Dbuild_cli=false`
+- MinGW static link: `-Dstatic_mingw=true`
+
+Example (CLI only):
+
+```powershell
+meson setup build --buildtype=release -Dbuild_gui=false
+meson compile -C build
+```
+
+### Manual g++ Build (legacy)
+
+Command-line tool:
 
 ```powershell
 g++ main.cpp -o velox -O3
 ```
 
-### GUI Player
-
-Compile the Velox player GUI (Windows only):
+GUI player (Windows only):
 
 ```powershell
 g++ VeloxPlayerGUI.cpp -o VeloxPlayer -O3 -mwindows -lcomdlg32 -lole32 -lshell32 -lwinmm -lgdi32 -lcomctl32 -static

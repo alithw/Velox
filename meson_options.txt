@@ -1,0 +1,17 @@
+option('build_cli',
+  type: 'boolean',
+  value: true,
+  description: 'Build the CLI encoder/decoder'
+)
+
+option('build_gui',
+  type: 'boolean',
+  value: true,
+  description: 'Build the Windows GUI player'
+)
+
+option('static_mingw',
+  type: 'boolean',
+  value: false,
+  description: 'Link MinGW/Clang binaries statically'
+)
