@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QAbstractItemView>
 #include <QBoxLayout>
+#include <QCloseEvent>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QFileDialog>
@@ -38,7 +39,8 @@ VeloxQtPlayerWindow::VeloxQtPlayerWindow(QWidget *parent)
       openFolderButton(nullptr),
       uiTimer(nullptr),
       loopEnabled(false),
-      currentIndex(-1)
+      currentIndex(-1),
+      closing(false)
 {
     setWindowTitle("Velox Player");
     setAcceptDrops(true);
@@ -53,6 +55,8 @@ VeloxQtPlayerWindow::VeloxQtPlayerWindow(QWidget *parent)
 
 void VeloxQtPlayerWindow::addFiles(const QStringList &paths)
 {
+    if (closing)
+        return;
     QStringList added;
     for (const QString &path : paths)
     {
@@ -75,6 +79,8 @@ void VeloxQtPlayerWindow::addFiles(const QStringList &paths)
 
 void VeloxQtPlayerWindow::playIndex(int index)
 {
+    if (closing)
+        return;
     if (index < 0 || index >= playlist->count())
         return;
     auto *item = playlist->item(index);
@@ -108,6 +114,8 @@ void VeloxQtPlayerWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void VeloxQtPlayerWindow::dropEvent(QDropEvent *event)
 {
+    if (closing)
+        return;
     QStringList paths;
     for (const QUrl &url : event->mimeData()->urls())
     {
@@ -117,6 +125,20 @@ void VeloxQtPlayerWindow::dropEvent(QDropEvent *event)
     }
     addFiles(paths);
     event->acceptProposedAction();
+}
+
+void VeloxQtPlayerWindow::closeEvent(QCloseEvent *event)
+{
+    closing = true;
+    if (uiTimer)
+        uiTimer->stop();
+    if (engine)
+    {
+        engine->blockSignals(true);
+        disconnect(engine, nullptr, this, nullptr);
+        engine->stop();
+    }
+    QMainWindow::closeEvent(event);
 }
 
 void VeloxQtPlayerWindow::buildUi()
@@ -222,6 +244,8 @@ void VeloxQtPlayerWindow::wireUi()
 
 void VeloxQtPlayerWindow::updateMetadata()
 {
+    if (closing)
+        return;
     titleLabel->setText(engine->title());
     artistLabel->setText(engine->artist());
     QString infoText = engine->info();
@@ -247,6 +271,8 @@ void VeloxQtPlayerWindow::updateMetadata()
 
 void VeloxQtPlayerWindow::updateState()
 {
+    if (closing)
+        return;
     if (!engine->isPlaying())
         playButton->setText("Play");
     else if (engine->isPaused())
@@ -259,6 +285,8 @@ void VeloxQtPlayerWindow::updateState()
 
 void VeloxQtPlayerWindow::updateProgress()
 {
+    if (closing)
+        return;
     qint64 total = engine->totalFrames();
     if (total <= 0)
         return;
@@ -290,6 +318,8 @@ void VeloxQtPlayerWindow::updateCoverPlaceholder()
 
 void VeloxQtPlayerWindow::playSelected()
 {
+    if (closing)
+        return;
     if (engine->isPlaying())
     {
         engine->togglePause();
@@ -305,6 +335,8 @@ void VeloxQtPlayerWindow::playSelected()
 
 void VeloxQtPlayerWindow::playNext()
 {
+    if (closing)
+        return;
     if (playlist->count() == 0)
         return;
     int next = currentIndex + 1;
@@ -320,6 +352,8 @@ void VeloxQtPlayerWindow::playNext()
 
 void VeloxQtPlayerWindow::playPrev()
 {
+    if (closing)
+        return;
     if (playlist->count() == 0)
         return;
     int prev = currentIndex - 1;

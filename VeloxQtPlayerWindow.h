@@ -9,6 +9,7 @@ class QListWidget;
 class QPushButton;
 class QSlider;
 class QTimer;
+class QCloseEvent;
 class VeloxQtPlayerEngine;
 
 class VeloxQtPlayerWindow : public QMainWindow
@@ -23,6 +24,7 @@ public:
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     void buildUi();
@@ -55,6 +57,7 @@ private:
     QTimer *uiTimer;
     bool loopEnabled;
     int currentIndex;
+    bool closing;
 };
 
 #endif
