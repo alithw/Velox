@@ -29,26 +29,78 @@ Velox is a sophisticated audio compression system designed to minimize file size
 6. **VeloxMetadata.h** - Vorbis-style metadata and cover art handling
 7. **VeloxThreads.h** - Thread pool for parallel processing
 8. **main.cpp** - Command-line encoder/decoder utility
-9. **VeloxPlayerGUI.cpp** - Windows GUI player application
+9. **velox_player_main.cpp** - Qt 6 GUI entry point
+10. **VeloxQtPlayerWindow.cpp** - Qt 6 GUI window
+11. **VeloxQtPlayerEngine.cpp** - Qt 6 playback engine
+12. **VeloxPlayerGUI.cpp** - Legacy Win32 GUI player (deprecated)
 
 ## Building
 
 ### Requirements
 
-- g++ compiler with C++11 or later
-- Windows OS (currently Windows-only)
+- C++17 compiler (Qt 6 requires C++17)
+- Meson + Ninja
+- Qt 6 (Widgets + Multimedia) for the GUI player
+- MSYS2 (MinGW or Clang toolchain) recommended on Windows
 
-### Command-Line Tool
+Install on MSYS2 (UCRT64 example):
 
-Compile the Velox encoder/decoder:
+> [!WARNING]
+> Note that MSVC is not supported yet (uses GCC/Clang builtins). MSYS2 GCC/Clang is supported.
+
+```powershell
+pacman -S --needed mingw-w64-ucrt-x86_64-toolchain meson ninja mingw-w64-ucrt-x86_64-qt6-base mingw-w64-ucrt-x86_64-qt6-multimedia
+```
+
+Linux (Debian/Ubuntu example):
+
+```bash
+sudo apt install build-essential meson ninja-build qt6-base-dev qt6-multimedia-dev
+```
+
+macOS (Homebrew example):
+
+```bash
+brew install qt meson ninja
+```
+
+### Meson Build (recommended)
+
+Configure and build:
+
+```powershell
+meson setup build --buildtype=release
+meson compile -C build
+```
+
+Outputs:
+
+- CLI: `build/velox`
+- GUI: `build/velox_player`
+
+Common options:
+
+- Disable GUI: `-Dbuild_gui=false` (useful if Qt 6 is not available)
+- Disable CLI: `-Dbuild_cli=false`
+- MinGW static link: `-Dstatic_mingw=true`
+
+Example (CLI only):
+
+```powershell
+meson setup build --buildtype=release -Dbuild_gui=false
+meson compile -C build
+meson install -C build
+```
+
+### Manual g++ Build (legacy)
+
+Command-line tool:
 
 ```powershell
 g++ main.cpp -o velox -O3
 ```
 
-### GUI Player
-
-Compile the Velox player GUI (Windows only):
+Legacy Win32 GUI player (Windows only):
 
 ```powershell
 g++ VeloxPlayerGUI.cpp -o VeloxPlayer -O3 -mwindows -lcomdlg32 -lole32 -lshell32 -lwinmm -lgdi32 -lcomctl32 -static
@@ -148,10 +200,10 @@ Write-Host "Compression ratio: $ratio%"
 
 ## Platform Support
 
-- **Windows**: Fully supported (both CLI and GUI)
-- **Linux/macOS**: Not currently supported
+- **Windows**: Fully supported (CLI + Qt GUI)
+- **Linux/macOS**: Supported with the Qt 6 GUI and the CLI
 
-The GUI player (`VeloxPlayerGUI`) requires Windows-specific APIs (Windows.h, winmm.lib, GDI+, etc.) and is not compatible with other platforms. However, the CLI encoder/decoder tools may be portable with modification.
+The legacy Win32 GUI (`VeloxPlayerGUI.cpp`) is Windows-only. The Qt 6 GUI (`velox_player`) is cross-platform.
 
 ## File Format
 

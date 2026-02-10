@@ -1,0 +1,289 @@
+System Informer 3.2.2103
+Windows NT 10.0 (64-bit)
+4:02:00 SA 04/02/2026
+
+Name					Base address	Size		Description							
+velox_player.exe			0x7ff688320000	240 kB										
+  ucrtbase.dll				0x7ffeb4330000	1,29 MB		Microsoft® C Runtime Library					
+  libgcc_s_seh-1.dll			0x7ffe92fb0000	172 kB										
+  libwinpthread-1.dll			0x7ffe97db0000	84 kB		POSIX WinThreads for Windows					
+  libstdc++-6.dll			0x7ffe38e00000	2,36 MB										
+  Qt6Core.dll				0x7ffe38760000	6,57 MB		C++ Application Development Framework				
+    advapi32.dll			0x7ffeb4970000	720 kB		Advanced Windows 32 Base API					
+      msvcrt.dll			0x7ffeb59a0000	676 kB		Windows NT CRT DLL						
+      sechost.dll			0x7ffeb5540000	664 kB		Host for SCM/SDDL/LSA Lookup APIs				
+      rpcrt4.dll			0x7ffeb56f0000	1,09 MB		Remote Procedure Call Runtime					
+      cryptbase.dll			0x7ffeb2f70000	48 kB		Base cryptographic API DLL					
+        bcryptprimitives.dll		0x7ffeb4280000	660 kB		Windows Cryptographic Primitives Library			
+      ntmarta.dll			0x7ffeb28f0000	216 kB		Windows NT MARTA provider					
+    shell32.dll				0x7ffeb4de0000	7,31 MB		Windows Shell Common Dll					
+      WinTypes.dll			0x7ffeb3f90000	1,42 MB		Windows Base Types DLL						
+        rometadata.dll			0x7ffe93d20000	228 kB		Microsoft MetaData Library					
+      windows.storage.dll		0x7ffeb1640000	8,36 MB		Microsoft WinRT Storage API					
+        SHCore.dll			0x7ffeb4780000	968 kB		SHCORE								
+        shlwapi.dll			0x7ffeb4880000	412 kB		Shell Light-weight Utility Library				
+        profapi.dll			0x7ffeb3970000	164 kB		User Profile Basic API						
+        apphelp.dll			0x7ffeb0270000	636 kB		Application Compatibility Client Library			
+        coml2.dll			0x7ffeb48f0000	496 kB		Microsoft COM for Windows					
+        ntshrui.dll			0x7ffe3ccc0000	668 kB		Shell extensions for sharing					
+      oleacc.dll			0x7ffe93040000	484 kB		Active Accessibility Core Component				
+      UIAutomationCore.dll		0x7ffe8ac90000	4,1 MB		Microsoft UI Automation Core					
+      policymanager.dll			0x7ffeaf070000	724 kB		Policy Manager DLL						
+      linkinfo.dll			0x7ffe79800000	60 kB		Windows Volume Tracking						
+    ws2_32.dll				0x7ffeb6000000	464 kB		Windows Socket 2.0 32-Bit DLL					
+    authz.dll				0x7ffeb2240000	320 kB		Authorization Framework						
+    mpr.dll				0x7ffe905a0000	132 kB		Multiple Provider Router DLL					
+    netapi32.dll			0x7ffe94830000	104 kB		Net Win32 API DLL						
+      netutils.dll			0x7ffeb21a0000	52 kB		Net Win32 API Helpers DLL					
+      srvcli.dll			0x7ffea9950000	164 kB		Server Service Client DLL					
+    userenv.dll				0x7ffeb2dd0000	172 kB		Userenv								
+    version.dll				0x7ffeaa830000	44 kB		Version Checking and File Installation Libraries		
+    winmm.dll				0x7ffea4330000	212 kB		MCI API DLL							
+    libb2-1.dll				0x7ffe97890000	64 kB										
+    libdouble-conversion.dll		0x7ffe816a0000	104 kB										
+    libicuin78.dll			0x7ffe36b10000	3 MB										
+    libicuuc78.dll			0x7ffe36920000	1,91 MB										
+      libicudt78.dll			0x7ffe346d0000	31,62 MB									
+    libpcre2-16-0.dll			0x7ffe3b480000	664 kB										
+    libzstd.dll				0x7ffe367f0000	1,16 MB										
+  Qt6Multimedia.dll			0x7ffe38600000	1,32 MB		C++ Application Development Framework				
+    ole32.dll				0x7ffeb4a50000	1,59 MB		Microsoft OLE for Windows					
+      msvcp_win.dll			0x7ffeb3a50000	652 kB		Microsoft® C Runtime Library					
+      gdi32.dll				0x7ffeb5fc0000	172 kB		GDI Client DLL							
+        win32u.dll			0x7ffeb4540000	156 kB		Win32u								
+        gdi32full.dll			0x7ffeb4570000	1,17 MB		GDI Client DLL							
+          user32.dll			0x7ffeb4bf0000	1,78 MB		Multi-User Windows USER API Client DLL				
+          TextShaping.dll		0x7ffe9c980000	716 kB		Microsoft Text Shaping Library					
+        DXCore.dll			0x7ffeb0de0000	268 kB		DXCore								
+      combase.dll			0x7ffeb6530000	3,54 MB		Microsoft COM for Windows					
+        kernel.appcore.dll		0x7ffeb27d0000	108 kB		AppModel API Host						
+        clbcatq.dll			0x7ffeb58e0000	704 kB		COM+ Configuration Catalog					
+    avrt.dll				0x7ffeb0d80000	44 kB		Multimedia Realtime Runtime					
+    propsys.dll				0x7ffeae3a0000	1,01 MB		Microsoft Property System					
+      Windows.StateRepositoryClient.dll	0x7ffe91c30000	284 kB		Windows StateRepository Client API				
+    Qt6Network.dll			0x7ffe36e10000	2,07 MB		C++ Application Development Framework				
+      dnsapi.dll			0x7ffeb22a0000	1,17 MB		DNS Client API DLL						
+      IPHLPAPI.DLL			0x7ffeb21b0000	208 kB		IP Helper API							
+        nsi.dll				0x7ffeb4a40000	40 kB		NSI User-mode interface DLL					
+      secur32.dll			0x7ffeb0320000	52 kB		Security Support Provider Interface				
+        sspicli.dll			0x7ffeb2a70000	292 kB		Security Support Provider Interface				
+      winhttp.dll			0x7ffeac620000	1,16 MB		Windows HTTP Services						
+  Qt6Gui.dll				0x7ffe37760000	9,75 MB		C++ Application Development Framework				
+    d3d11.dll				0x7ffeb0b10000	2,38 MB		Direct3D 11 Runtime						
+    D3D12.dll				0x7ffe39060000	140 kB		Direct3D 12 Runtime						
+    DWrite.dll				0x7ffeb04b0000	2,4 MB		Microsoft DirectX Typography Services				
+    uxtheme.dll				0x7ffeb07c0000	680 kB		Microsoft UxTheme Library					
+    dxgi.dll				0x7ffeb0e30000	1,22 MB		DirectX Graphics Infrastructure					
+      powrprof.dll			0x7ffeb38b0000	376 kB		Power Profile Helper DLL					
+        umpdc.dll			0x7ffeb3890000	80 kB		User Mode Power Dependency Coordinator				
+    libfreetype-6.dll			0x7ffe38530000	800 kB		Font Rendering Library						
+      libbrotlidec.dll			0x7ffe7fd60000	88 kB										
+        libbrotlicommon.dll		0x7ffe61e90000	172 kB										
+      libbz2-1.dll			0x7ffe7c600000	104 kB										
+    libpng16-16.dll			0x7ffe61f90000	276 kB										
+    libmd4c.dll				0x7ffe819e0000	120 kB										
+    libharfbuzz-0.dll			0x7ffe383b0000	1,49 MB										
+      usp10.dll				0x7ffe12d40000	100 kB		Uniscribe Unicode script processor				
+      libgraphite2.dll			0x7ffe61f60000	176 kB										
+      libglib-2.0-0.dll			0x7ffe36670000	1,5 MB		GLib								
+        libintl-8.dll			0x7ffe55620000	324 kB		LGPLed libintl for Windows					
+          libiconv-2.dll		0x7ffe345b0000	1,12 MB		LGPLed libiconv for Windows					
+        libpcre2-8-0.dll		0x7ffe382f0000	728 kB										
+    zlib1.dll				0x7ffe819c0000	124 kB										
+  Qt6Widgets.dll			0x7ffe37030000	7,14 MB		C++ Application Development Framework				
+    dwmapi.dll				0x7ffeb1190000	192 kB		Microsoft Desktop Window Manager API				
+ntdll.dll				0x7ffeb6900000	2,41 MB		NT Layer DLL							
+kernel32.dll				0x7ffeb5810000	804 kB		Windows NT BASE API Client DLL					
+  KernelBase.dll			0x7ffeb3b90000	3,97 MB		Windows NT BASE API Client DLL					
+    MrmCoreR.dll			0x7ffeaccf0000	1,09 MB		Microsoft Windows MRM						
+      BCP47mrm.dll			0x7ffeac010000	208 kB		BCP47 Language Classes for Resource Management			
+imm32.dll				0x7ffeb6370000	196 kB		Multi-User Windows IMM32 API Client DLL				
+  msctf.dll				0x7ffeb63c0000	1,37 MB		MSCTF Server DLL						
+    TextInputFramework.dll		0x7ffe9c290000	1,28 MB		"TextInputFramework.DYNLINK"					
+      CoreMessaging.dll			0x7ffeaf7a0000	1,15 MB		Microsoft CoreMessaging Dll					
+      CoreUIComponents.dll		0x7ffeac080000	2,88 MB		Microsoft Core UI Components Dll				
+qwindows.dll				0x7ffe34450000	1,32 MB		C++ Application Development Framework				
+  comdlg32.dll				0x7ffeb55f0000	968 kB		Common Dialogs DLL						
+    comctl32.dll			0x7ffe92960000	720 kB		Common Controls Library						
+    dui70.dll				0x7ffe3f7b0000	1,67 MB		Windows DirectUI Engine						
+      duser.dll				0x7ffe28bb0000	656 kB		Windows DirectUser Engine					
+    edputil.dll				0x7ffe593d0000	164 kB		EDP util							
+  oleaut32.dll				0x7ffeb60b0000	860 kB		OLEAUT32.DLL							
+    sxs.dll				0x7ffeb37c0000	644 kB		Fusion 2.5							
+  setupapi.dll				0x7ffeb5ae0000	4,54 MB		Windows Setup API						
+  d3d9.dll				0x7ffe8aad0000	1,69 MB		Direct3D 9 Runtime						
+    directxdatabasehelper.dll		0x7ffeacc80000	396 kB		DirectXDatabaseHelper						
+  wtsapi32.dll				0x7ffeb0330000	168 kB		Windows Remote Desktop Session Host Server SDK APIs		
+    crypt32.dll				0x7ffeb4100000	1,46 MB		Crypto API32							
+      cryptsp.dll			0x7ffeb3110000	108 kB		Cryptographic Service Provider API				
+      bcrypt.dll			0x7ffeb3940000	168 kB		Windows Cryptographic Primitives Library			
+keyman64.dll				0x57000000	1,31 MB		Keyman Engine Processor x64					
+devobj.dll				0x7ffeb35a0000	180 kB		Device Information Set DLL					
+  cfgmgr32.dll				0x7ffeb35d0000	348 kB		Configuration Manager DLL					
+wintrust.dll				0x7ffeb3b00000	508 kB		Microsoft Trust Verification APIs				
+  msasn1.dll				0x7ffeb3170000	76 kB		ASN.1 Runtime APIs						
+  imagehlp.dll				0x7ffeb6080000	128 kB		Windows NT Image Helper						
+qmodernwindowsstyle.dll			0x7ffe61d20000	284 kB		C++ Application Development Framework				
+cryptnet.dll				0x7ffeaa550000	236 kB		Crypto Network Related API					
+rsaenh.dll				0x7ffeb2730000	232 kB		Microsoft Enhanced Cryptographic Provider			
+DataExchange.dll			0x7ffe53170000	360 kB		Data exchange							
+  twinapi.appcore.dll			0x7ffea9f90000	2,27 MB		twinapi.appcore							
+networkexplorer.dll			0x7ffe59400000	108 kB		Network Explorer						
+comctl32.dll				0x7ffe93180000	2,58 MB		User Experience Controls Library				
+  WindowsCodecs.dll			0x7ffeae9a0000	2,19 MB		Microsoft Windows Codecs Library				
+tiptsf.dll				0x7ffe3ebf0000	644 kB		Touch Keyboard and Handwriting Panel Text Services Framework	
+msiltcfg.dll				0x7ffe99750000	44 kB		Windows Installer Configuration API Stub			
+msi.dll					0x7ffe98780000	3,29 MB		Windows Installer						
+ExplorerFrame.dll			0x7ffe57c30000	2,73 MB		ExplorerFrame							
+thumbcache.dll				0x7ffe3fa10000	444 kB		Microsoft Thumbnail Cache					
+Windows.Globalization.dll		0x7ffea44a0000	1,56 MB		Windows Globalization						
+  globinputhost.dll			0x7ffe91460000	204 kB		Windows Globalization Extension API for Input			
+    BCP47Langs.dll			0x7ffead200000	376 kB		BCP47 Language Classes						
+Windows.System.Launcher.dll		0x7ffe60ac0000	1,48 MB		Windows.System.Launcher						
+  Windows.StateRepositoryCore.dll	0x7ffe99450000	104 kB		Windows StateRepository API Core				
+xmllite.dll				0x7ffe9d770000	268 kB		Microsoft XmlLite Library					
+atlthunk.dll				0x7ffe813a0000	52 kB		atlthunk.dll							
+StructuredQuery.dll			0x7ffe50500000	760 kB		Structured Query						
+  icu.dll				0x7ffe8e2e0000	2,62 MB		ICU Combined Library						
+OneCoreUAPCommonProxyStub.dll		0x7ffe9e4f0000	6,31 MB		OneCoreUAP Common Proxy Stub					
+Windows.FileExplorer.Common.dll		0x7ffe3bd70000	748 kB		Windows.FileExplorer.Common					
+  cldapi.dll				0x7ffe54e50000	188 kB		Cloud API user mode API						
+OneCoreCommonProxyStub.dll		0x7ffe96180000	804 kB		OneCore Common Proxy Stub					
+Windows.StateRepositoryPS.dll		0x7ffe80b50000	784 kB		Windows StateRepository Proxy/Stub Server			
+Windows.Storage.Search.dll		0x7ffe42c30000	1,21 MB		Windows.Storage.Search						
+windowsudk.shellcommon.dll		0x7ffe61680000	6,11 MB		Windows Undocked Dev Kit Shellcommon DLL			
+Windows.UI.dll				0x7ffeac930000	1,31 MB		Windows Runtime UI Foundation DLL				
+Windows.UI.Immersive.dll		0x7ffeaa6d0000	1,31 MB		WINDOWS.UI.IMMERSIVE						
+p9np.dll				0x7ffe93420000	136 kB		Plan 9 Network Provider						
+drprov.dll				0x7ffe997e0000	52 kB		Microsoft Remote Desktop Session Host Server Network Provider	
+  winsta.dll				0x7ffeb3660000	396 kB		Winstation Library						
+ntlanman.dll				0x7ffe91ad0000	148 kB		Microsoft® Lan Manager						
+  wkscli.dll				0x7ffeac8c0000	108 kB		Workstation Service Client DLL					
+davclnt.dll				0x7ffe816c0000	132 kB		Web DAV Client DLL						
+cscapi.dll				0x7ffe8ffc0000	76 kB		Offline Files Win32 API						
+actxprxy.dll				0x7ffe3c720000	516 kB		ActiveX Interface Marshaling Library				
+dlnashext.dll				0x7ffe7e390000	328 kB		DLNA Namespace DLL						
+PlayToDevice.dll			0x7ffe343f0000	368 kB		PLAYTODEVICE DLL						
+DevDispItemProvider.dll			0x7ffe5ed90000	188 kB		DeviceItem inproc devquery subsystem				
+twinapi.dll				0x7ffe58ea0000	848 kB		twinapi								
+MMDevAPI.dll				0x7ffeaa920000	604 kB		MMDevice API							
+wpdshext.dll				0x7ffe34340000	656 kB		Portable Devices Shell Extension				
+  GdiPlus.dll				0x7ffe93500000	1,85 MB		Microsoft GDI+							
+PortableDeviceApi.dll			0x7ffeace10000	628 kB		Windows Portable Device API Components				
+EhStorShell.dll				0x7ffe93730000	224 kB		Windows Enhanced Storage Shell Extension DLL			
+EhStorAPI.dll				0x7ffe60390000	148 kB		Windows Enhanced Storage API					
+CoreSync_x64.dll			0x7ffdfc9b0000	776 kB		Core Sync							
+cscui.dll				0x7ffe3bad0000	816 kB		Client Side Caching UI						
+urlmon.dll				0x7ffea9c50000	1,87 MB		OLE32 Extensions for Win32					
+  iertutil.dll				0x7ffea9980000	2,77 MB		Run time utility for Internet Explorer				
+ffmpegmediaplugin.dll			0x7ffe34290000	676 kB		C++ Application Development Framework				
+  mf.dll				0x7ffe60440000	612 kB		Media Foundation DLL						
+    mfcore.dll				0x7ffe5fdc0000	4,1 MB		Media Foundation Core DLL					
+  mfplat.dll				0x7ffe94610000	2,09 MB		Media Foundation Platform DLL					
+    RTWorkQ.dll				0x7ffe976c0000	244 kB		Realtime WorkQueue DLL						
+  avformat-62.dll			0x7ffe33ef0000	2,74 MB		FFmpeg container format library					
+    libbluray-3.dll			0x7ffe31180000	380 kB										
+    libgme.dll				0x7ffe310b0000	772 kB										
+    libgnutls-30.dll			0x7ffe30e90000	2,11 MB										
+      libbrotlienc.dll			0x7ffe2b0b0000	796 kB										
+      libgmp-10.dll			0x7ffe2b000000	692 kB										
+      ncrypt.dll			0x7ffeb3260000	192 kB		Windows NCrypt Router						
+        ntasn1.dll			0x7ffeb3210000	252 kB		Microsoft ASN.1 API						
+      libhogweed-6.dll			0x7ffe2af60000	300 kB										
+      libidn2-0.dll			0x7ffe2afb0000	268 kB										
+      libnettle-8.dll			0x7ffe2af00000	360 kB										
+      libtasn1-6.dll			0x7ffe2ad60000	132 kB										
+      libunistring-5.dll		0x7ffe2ab30000	2,15 MB		LGPLed libunistring for Windows					
+      libp11-kit-0.dll			0x7ffe2ad90000	1,42 MB										
+    librtmp-1.dll			0x7ffe596e0000	132 kB										
+    libmodplug-1.dll			0x7ffe30da0000	940 kB										
+    libsrt.dll				0x7ffe30cc0000	876 kB										
+      wsock32.dll			0x7ffe8a760000	40 kB		Windows Socket 32-Bit DLL					
+      libcrypto-3-x64.dll		0x7ffe2a590000	5,57 MB		OpenSSL library							
+    libssh.dll				0x7ffe30c30000	548 kB										
+    libxml2-16.dll			0x7ffe30af0000	1,21 MB										
+  mfreadwrite.dll			0x7ffe341b0000	856 kB		Media Foundation ReadWrite DLL					
+  avutil-60.dll				0x7ffe31400000	17,34 MB	FFmpeg utility library						
+    libva_win32.dll			0x7ffe95d00000	52 kB										
+    libva.dll				0x7ffe3bc50000	292 kB										
+    libvpl-2.dll			0x7ffe309e0000	476 kB		Intel® VPL Dispatcher						
+  swscale-9.dll				0x7ffe311e0000	2,09 MB		FFmpeg image rescaling library					
+  swresample-6.dll			0x7ffe400e0000	208 kB		FFmpeg audio resampling library					
+    libsoxr.dll				0x7ffe30a60000	540 kB										
+      libgomp-1.dll			0x7ffe2a530000	328 kB										
+  avcodec-62.dll			0x7ffe32560000	25,5 MB		FFmpeg codec library						
+    libaom.dll				0x7ffe30050000	9,54 MB										
+    libdav1d-7.dll			0x7ffe2fe40000	2,02 MB		dav1d 1.5.2 - AV1 decoder					
+    libcairo-2.dll			0x7ffe2fd00000	1,2 MB										
+      msimg32.dll			0x7ffe936e0000	32 kB		GDIEXT Client DLL						
+      libfontconfig-1.dll		0x7ffe2a4d0000	364 kB										
+        libexpat-1.dll			0x7ffe2a080000	220 kB										
+      libpixman-1-0.dll			0x7ffe2a410000	744 kB										
+    libgobject-2.0-0.dll		0x7ffe2fca0000	368 kB		GObject								
+      libffi-8.dll			0x7ffe953a0000	64 kB										
+    libgsm.dll				0x7ffe62830000	84 kB										
+    libjxl_threads.dll			0x7ffe953e0000	52 kB										
+    libjxl.dll				0x7ffe2f650000	6,26 MB										
+      libjxl_cms.dll			0x7ffe2a3e0000	152 kB										
+        liblcms2-2.dll			0x7ffe2a010000	448 kB										
+      libhwy.dll			0x7ffe2a3c0000	104 kB										
+    liblc3-1.dll			0x7ffe579d0000	188 kB										
+    liblzma-5.dll			0x7ffe2f610000	212 kB		liblzma data compression library				
+    libmp3lame-0.dll			0x7ffe2f580000	520 kB										
+    libopencore-amrnb-0.dll		0x7ffe2f540000	200 kB										
+    libopencore-amrwb-0.dll		0x7ffe61f40000	128 kB										
+    libopenjp2-7.dll			0x7ffe2f4b0000	528 kB										
+    libopus-0.dll			0x7ffe2f430000	452 kB										
+    librav1e.dll			0x7ffe2f0c0000	3,38 MB										
+    librsvg-2-2.dll			0x7ffe2e2f0000	13,8 MB										
+      libcairo-gobject-2.dll		0x7ffe94fc0000	64 kB										
+      libgdk_pixbuf-2.0-0.dll		0x7ffe2a360000	360 kB		GIMP Toolkit							
+        libgmodule-2.0-0.dll		0x7ffe94370000	56 kB		GModule								
+        libjpeg-8.dll			0x7ffe29f20000	932 kB										
+        libtiff-6.dll			0x7ffe29e80000	612 kB										
+          libdeflate.dll		0x7ffe29dd0000	128 kB										
+          libLerc.dll			0x7ffe29d00000	772 kB										
+          libjbig-0.dll			0x7ffe29ce0000	92 kB										
+      libpango-1.0-0.dll		0x7ffe2a2f0000	428 kB		Pango								
+        libfribidi-0.dll		0x7ffe29e50000	184 kB										
+        libthai-0.dll			0x7ffe29e30000	96 kB										
+          libdatrie-1.dll		0x7ffe93d60000	64 kB										
+      libpangocairo-1.0-0.dll		0x7ffe2a100000	92 kB		PangoCairo							
+        libpangowin32-1.0-0.dll		0x7ffe29df0000	128 kB		PangoWin32							
+        libpangoft2-1.0-0.dll		0x7ffe29e10000	116 kB		PangoFT2							
+      libgio-2.0-0.dll			0x7ffe2a120000	1,77 MB		Gio								
+    libshaderc_shared.dll		0x7ffe2d970000	9,46 MB										
+    libspeex-1.dll			0x7ffe40aa0000	164 kB										
+    libSvtAv1Enc-3.dll			0x7ffe2d080000	8,9 MB										
+    libtheoradec-2.dll			0x7ffe5aa90000	124 kB										
+    libtheoraenc-2.dll			0x7ffe2d030000	268 kB										
+      libogg-0.dll			0x7ffe2a0e0000	68 kB										
+    libvorbis-0.dll			0x7ffe2cff0000	204 kB										
+    libvorbisenc-2.dll			0x7ffe2cf50000	596 kB										
+    libvpx-1.dll			0x7ffe2cac0000	4,5 MB										
+    libwebpmux-3.dll			0x7ffe59c60000	104 kB										
+    libx264-165.dll			0x7ffe2c7d0000	2,92 MB		H.264 (MPEG-4 AVC) encoder library				
+    libwebp-7.dll			0x7ffe2c710000	756 kB										
+      libsharpyuv-0.dll			0x7ffe2a0c0000	80 kB										
+    libx265-215.dll			0x7ffe2b320000	19,94 MB	HEVC video encoder						
+    xvidcore.dll			0x7ffe2b1f0000	1,18 MB										
+    libzvbi-0.dll			0x7ffe2b180000	448 kB										
+nvml.dll				0x7ffe7caf0000	1,29 MB		NVIDIA Management Library 591.74				
+nvcuda.dll				0x7ffe298c0000	4,09 MB		NVIDIA CUDA Driver, Version 591.74 				
+nvcuda64.dll				0x7ffddbeb0000	33,86 MB	NVIDIA CUDA Driver, Version 591.74 				
+wldp.dll				0x7ffeb3010000	404 kB		Windows Lockdown Policy						
+drvstore.dll				0x7ffeaa1e0000	1,48 MB		Driver Store API						
+nvapi64.dll				0x7ffe9a130000	5,58 MB		NVIDIA NVAPI Library, Version 591.74 				
+nvdxgdmal64.dll				0x7ffe914e0000	616 kB										
+nvspcap64.dll				0x7ffe1b380000	1,28 MB		NVIDIA Game Proxy						
+nvppex.dll				0x7ffe57650000	1,71 MB		NVIDIA Driver, Version 591.74 					
+nvoglv64.dll				0x7ffe0b0b0000	41,14 MB	NVIDIA Compatible OpenGL ICD					
+nvgpucomp64.dll				0x7ffea4960000	77 MB		NVIDIA GPU Compiler Driver, Version 591.74 			
+graphics-hook64.dll			0x7ffe297c0000	308 kB		OBS Graphics Hook						
+nvrtum64.dll				0x7ffddfe90000	92,63 MB	NVIDIA Driver, Version 591.74 					
+AudioSes.dll				0x7ffe99570000	1,71 MB		Audio Session							
+  ResourcePolicyClient.dll		0x7ffeb1220000	80 kB		Resource Policy Client						
+AppXDeploymentClient.dll		0x7ffeaaa90000	1,43 MB		AppX Deployment Client DLL					
+Windows.ApplicationModel.dll		0x7ffe95a20000	856 kB		Windows ApplicationModel API Server				
+Windows.StateRepositoryBroker.dll	0x7ffe5d3d0000	140 kB		Windows StateRepository API Broker				
+mssprxy.dll				0x7ffe18c20000	192 kB		Microsoft Search Proxy						
