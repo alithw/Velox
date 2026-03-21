@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
-// Bitstream Writer
+// --- BITSTREAM WRITER (64-BIT UPGRADE) ---
 class BitStreamWriter
 {
     std::vector<uint8_t> buffer;
@@ -28,7 +28,7 @@ public:
         }
     }
 
-    inline void Write(uint32_t val, int n)
+    inline void Write(uint64_t val, int n)
     {
         for (int i = 0; i < n; i++)
             WriteBit((val >> i) & 1);
@@ -42,7 +42,7 @@ public:
     const std::vector<uint8_t> &GetData() const { return buffer; }
 };
 
-// Bitstream Reader
+// --- BITSTREAM READER ---
 class BitStreamReader
 {
     const uint8_t *data;
@@ -69,42 +69,41 @@ public:
         return val;
     }
 
-    inline uint32_t Read(int n)
+    // Change uint32_t to uint64_t
+    inline uint64_t Read(int n)
     {
-        uint32_t val = 0;
+        uint64_t val = 0;
         for (int i = 0; i < n; i++)
             if (ReadBit())
-                val |= (1 << i);
+                val |= (1ULL << i);
         return val;
     }
 
-    inline int32_t ReadS(int n)
+    inline int64_t ReadS(int n)
     {
-        uint32_t v = Read(n);
-        if (v & (1 << (n - 1)))
-            return (int32_t)(v - (1 << n));
-        return (int32_t)v;
+        uint64_t v = Read(n);
+        if (v & (1ULL << (n - 1)))
+            return (int64_t)(v - (1ULL << n));
+        return (int64_t)v;
     }
-
-    bool IsEOF() const { return pos >= size && bit_cnt == 0; }
 };
 
-// Entropy utilities
+// --- ENTROPY UTILS (64-BIT) ---
 class VeloxEntropy
 {
 public:
-    static inline uint32_t ZigZag(int64_t n) { return (uint32_t)((n << 1) ^ (n >> 63)); }
-    static inline int64_t DeZigZag(uint32_t n) { return (int64_t)((n >> 1) ^ -(int64_t)(n & 1)); }
+    static inline uint64_t ZigZag(int64_t n) { return (uint64_t)((n << 1) ^ (n >> 63)); }
+    static inline int64_t DeZigZag(uint64_t n) { return (int64_t)((n >> 1) ^ -(int64_t)(n & 1)); }
 
-    static void EncodeSample(BitStreamWriter &bs, int32_t val, int k)
+    static void EncodeSample(BitStreamWriter &bs, int64_t val, int k)
     {
-        uint32_t m = ZigZag(val);
-        uint32_t q = m >> k;
-        uint32_t r = m & ((1 << k) - 1);
+        uint64_t m = ZigZag(val);
+        uint64_t q = m >> k;
+        uint64_t r = m & ((1ULL << k) - 1);
 
-        if (q < 32)
+        if (q < 64)
         {
-            for (uint32_t i = 0; i < q; i++)
+            for (uint64_t i = 0; i < q; i++)
                 bs.WriteBit(1);
             bs.WriteBit(0);
             if (k > 0)
@@ -112,29 +111,30 @@ public:
         }
         else
         {
-            for (uint32_t i = 0; i < 32; i++)
+            for (uint64_t i = 0; i < 64; i++)
                 bs.WriteBit(1);
             bs.WriteBit(0);
-            bs.Write(m, 32);
+            bs.Write(m, 40);
         }
     }
 
-    static int32_t DecodeSample(BitStreamReader &bs, int k)
+    static int64_t DecodeSample(BitStreamReader &bs, int k)
     {
-        uint32_t q = 0;
+        uint64_t q = 0;
         while (bs.ReadBit())
             q++;
-        uint32_t m;
-        if (q < 32)
+
+        uint64_t m;
+        if (q < 64)
         {
-            uint32_t r = (k > 0) ? bs.Read(k) : 0;
+            uint64_t r = (k > 0) ? bs.Read(k) : 0;
             m = (q << k) | r;
         }
         else
         {
-            m = bs.Read(32);
+            m = bs.Read(40);
         }
-        return (int32_t)DeZigZag(m);
+        return DeZigZag(m);
     }
 };
 
